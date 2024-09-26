@@ -1,4 +1,5 @@
 #include <heightServer.h>
+#include <ESPmDNS.h>
 
 void HeightServer::getRoot() {
   server.send(200, "text/plain", "hello from esp32!\r\n");
@@ -30,9 +31,13 @@ void HeightServer::deleteHeight() {
 }
 
 
-HeightServer::HeightServer(Logger &logger, int ledPin) : logger(logger), ledPin(ledPin), server(PORT) {}
+HeightServer::HeightServer(DeskSerial &deskSerial, Logger &logger, int ledPin) : deskSerial(deskSerial), logger(logger), ledPin(ledPin), server(PORT) {}
 
-void HeightServer::start() {
+void HeightServer::start(String name) {
+  if (MDNS.begin(name)) {
+    logger.info("MDNS responder started");
+  }
+
   server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET /"));
   server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height"));
   server.on("/height", HTTP_PUT, trackRequest(std::bind(&HeightServer::putHeight, this), "PUT /height"));
@@ -45,7 +50,6 @@ void HeightServer::start() {
 void HeightServer::handleClient() {
   server.handleClient();
 }
-
 
 WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, const char* name)
 {

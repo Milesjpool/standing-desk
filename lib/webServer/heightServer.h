@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <WebServer.h>
 #include <logger.h>
+#include <deskSerial.h>
 
 #define PORT 80
 
@@ -10,6 +11,7 @@ private:
     int ledPin;
     Logger &logger;
     WebServer server;
+    DeskSerial &deskSerial;
     WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char* name);
 
     void getRoot();
@@ -18,7 +20,7 @@ private:
     void deleteHeight();
 
 public:
-    HeightServer(Logger &logger, int ledPin);
-    void start();
+    HeightServer(DeskSerial &deskSerial, Logger &logger, int ledPin);
+    void start(String name);
     void handleClient();
 };
