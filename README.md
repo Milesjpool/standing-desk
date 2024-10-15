@@ -25,7 +25,7 @@ Inspiration drawn from:
 - `GET /` returns welcome message and local IP address.
 - `GET /height` returns last height reading, and reading 'staleness'.
 - `POST /height/{preset-id}` moves desk to preset height. 
-- `DELETE /height` stops and movement in progress.
+- `DELETE /height` stops any movement in progress.
 
 ### Todo
 - Improve height query implementation
