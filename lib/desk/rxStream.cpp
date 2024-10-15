@@ -5,17 +5,17 @@
 const byte NULL_MSG_TYPE = 0xFF;
 const Message NULL_MSG = Message(NULL_MSG_TYPE, {}, 0);
 
-void consumeMessageStream(SoftwareSerial &stream, Logger &logger)
-{
-  int minLength = 3; // start + length + end
+const int MIN_LENGTH = 3; // start + length + end
 
-  while (stream.available() >= minLength)
+void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight, boolean consumeFully)
+{
+  while (stream.available() >= MIN_LENGTH)
   {
     byte startByte = stream.read();
     if (startByte == START)
     {
       Message message = readMessage(stream, logger);
-      processMessage(logger, message);
+      processMessage(logger, message, currentHeight);
     }
     else
     {
@@ -26,6 +26,10 @@ void consumeMessageStream(SoftwareSerial &stream, Logger &logger)
         excessData += " " + formatByte(b);
       }
       logger.debug("Flushed excess data - " + excessData);
+    }
+    if (!consumeFully)
+    {
+      break;
     }
   }
 }
@@ -48,7 +52,8 @@ Message readMessage(SoftwareSerial &stream, Logger &logger)
   byte checksum[CHECKSUM_SIZE];
 
   int timeout = 1000;
-  while (stream.available() < (dataLength + CHECKSUM_SIZE) && timeout > 0)
+  int remainingLength = dataLength + CHECKSUM_SIZE + sizeof(END);
+  while (stream.available() < remainingLength && timeout > 0)
   {
     delay(1);
     timeout--;
@@ -81,7 +86,7 @@ Message readMessage(SoftwareSerial &stream, Logger &logger)
   return message;
 }
 
-void processMessage(Logger &logger, Message message)
+void processMessage(Logger &logger, Message message, HeightReading &currentHeight)
 {
   byte type = message.type;
   int length = message.getLength();
@@ -93,11 +98,28 @@ void processMessage(Logger &logger, Message message)
   case NULL_MSG_TYPE:
     logger.debug("Invalid message");
     break;
-  case CURRENT_HEIGHT:
-    logger.info("Received height message: " + formatBytes(bytes, length));
+  case DISPLAY_OUT:
+  {
+    // TODO: Handle {0x77 0x6D 0x31} //ASR error
+    // TODO: Handle {0x00 0x00 0x00} //Blank display, without decoding.
+
+    int height = decodeHeight(message.data, message.dataLength);
+    if (height > 0)
+    {
+      currentHeight = HeightReading(height, millis());
+      logger.info("Received height value: " + String(height));
+    } else if (height == 0)
+    {
+      logger.debug("Ignored empty height message: " + message.toString());
+    }
+    else
+    {
+      logger.warn("Invalid height message: " + message.toString());
+    }
     break;
+  }
   default:
-    logger.debug("Unknown message type: #" + formatByte(type) + ": [" + formatBytes(bytes, length) + "]");
+    logger.debug("Unknown message type: #" + formatByte(type) + ": [" + message.toString() + "]");
     break;
   }
 }

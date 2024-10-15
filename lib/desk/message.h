@@ -4,9 +4,9 @@
 
 enum MessageType {
   BUTTON_PRESS = 0x02,
-  CURRENT_HEIGHT = 0x12,
-  UNKNOWN_1 = 11,
-  UNKNOWN_2 = 15
+  DISPLAY_OUT = 0x12,
+  UNKNOWN_1 = 0x11,
+  UNKNOWN_2 = 0x15
 };
 
 const byte START = 0x9B;
@@ -19,11 +19,12 @@ private:
   byte* checksum;
 public:
   byte type;
-  int dataLen;
+  int dataLength;
   byte* data;
   
   Message(byte type, byte* data, int dataLen);
   int getLength();
   void writeBytes(byte* bytes);
   boolean hasChecksum(byte* receivedChecksum);
+  String toString();
 };;

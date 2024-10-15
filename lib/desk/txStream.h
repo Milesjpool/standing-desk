@@ -4,6 +4,6 @@
 #include <message.h>
 #include <SoftwareSerial.h>
 
-#define TXWAKE 14
+#define TXWAKE 33
 
-void issueCommand(SoftwareSerial &stream, Message &command, Logger &logger);
+void sendCommand(SoftwareSerial &stream, Message &command);

@@ -1,6 +1,7 @@
 #include <message.h>
+#include <byteUtils.h>
 
-Message::Message(byte type, byte* data, int dataLen): type(type), data(data), dataLen(dataLen) {
+Message::Message(byte type, byte* data, int dataLen): type(type), data(data), dataLength(dataLen) {
   contentLength = sizeof(contentLength) + sizeof(type) + dataLen + CHECKSUM_SIZE;
   content = new byte[contentLength]();
   content[0] = contentLength;
@@ -34,4 +35,9 @@ boolean Message::hasChecksum(byte* checksum) {
     }
   }
   return true;
+}
+
+String Message::toString() {
+  String str = formatBytes(content, contentLength);
+  return str;
 }

@@ -18,3 +18,7 @@ void WifiManager::connect(Stream &outputSerial) {
 
   logger.info("Connected to " + String(ssid) + ". IP address: " + WiFi.localIP().toString());
 }
+
+String WifiManager::getLocalIp() {
+  return WiFi.localIP().toString();
+}
