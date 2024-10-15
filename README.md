@@ -20,11 +20,18 @@ Inspiration drawn from:
 - Height-decoding: https://github.com/grssmnn/ha-flexispot-standing-desk/tree/master?tab=readme-ov-file
 - Commands: https://github.com/iMicknl/LoctekMotion_IoT
 
-## Todo
+## Functionality 
+### Current
+- `GET /` returns welcome message and local IP address.
+- `GET /height` returns last height reading, and reading 'staleness'.
+- `POST /height/{preset-id}` moves desk to preset height. 
+- `DELETE /height` stops and movement in progress.
+
+### Todo
 - Improve height query implementation
 - investigate occasional crashes: `abort() was called at PC 0x40085345 on core 0`
-- Move desk to specific height
+- Move desk to specific height (`PUT /height/{height_mm}`?)
 - Voice controls?
 
 -----
-*or as close to REST as I can get with [the package](https://github.com/espressif/arduino-esp32/tree/b05f18dad55609ae2a569be81c7535021b880cf3/libraries/WebServer) available.
+*or as close to REST as I can get with [the package](https://github.com/espressif/arduino-esp32/tree/b05f18dad55609ae2a569be81c7535021b880cf3/libraries/WebServer) available - not sure how to decode a request body yet...
