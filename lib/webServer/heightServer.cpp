@@ -83,12 +83,12 @@ void HeightServer::start(int ledPin)
 
   server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height", ledPin));
   server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE /height", ledPin));
-  server.on("/height/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, M1_CMD), "POST /height/1", ledPin));
-  server.on("/height/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, M2_CMD), "POST /height/2", ledPin));
-  server.on("/height/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, M3_CMD), "POST /height/3", ledPin));
-  server.on("/height/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, M4_CMD), "POST /height/4", ledPin));
-  server.on("/height/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, STAND_CMD), "POST /height/stand", ledPin));
-  server.on("/height/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, SIT_CMD), "POST /height/sit", ledPin));
+  server.on("/height/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST /height/1", ledPin));
+  server.on("/height/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST /height/2", ledPin));
+  server.on("/height/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST /height/3", ledPin));
+  server.on("/height/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST /height/4", ledPin));
+  server.on("/height/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST /height/stand", ledPin));
+  server.on("/height/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), "POST /height/sit", ledPin));
 
   server.begin();
   logger.info("HTTP server started");
