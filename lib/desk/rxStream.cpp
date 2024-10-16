@@ -2,9 +2,6 @@
 #include <byteUtils.h>
 #include <message.h>
 
-const byte NULL_MSG_TYPE = 0xFF;
-const Message NULL_MSG = Message(NULL_MSG_TYPE, {}, 0);
-
 const int MIN_LENGTH = 3; // start + length + end
 
 void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight, boolean consumeFully)
@@ -14,8 +11,7 @@ void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading 
     byte startByte = stream.read();
     if (startByte == START)
     {
-      Message message = readMessage(stream, logger);
-      processMessage(logger, message, currentHeight);
+      readMessage(stream, logger, currentHeight);
     }
     else
     {
@@ -34,7 +30,7 @@ void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading 
   }
 }
 
-Message readMessage(SoftwareSerial &stream, Logger &logger)
+void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight)
 {
   byte messageLength = stream.read();
   int minimumLength = 2 + CHECKSUM_SIZE; // length + type + checksum
@@ -42,7 +38,7 @@ Message readMessage(SoftwareSerial &stream, Logger &logger)
   if (messageLength < minimumLength)
   {
     logger.warn("message length too short - " + formatByte(messageLength));
-    return NULL_MSG;
+    return;
   }
 
   byte messageType = stream.read();
@@ -60,7 +56,7 @@ Message readMessage(SoftwareSerial &stream, Logger &logger)
     if (timeout == 0)
     {
       logger.warn("timeout waiting for data");
-      return NULL_MSG;
+      return;
     }
   }
   stream.read(data, dataLength);
@@ -72,21 +68,22 @@ Message readMessage(SoftwareSerial &stream, Logger &logger)
     logger.warn(String("End byte not found. ") +
                 "Expected: '... " + formatByte(END) + "'. " +
                 "Recieved: '" + formatByte(START) + " " + formatByte(messageLength) + " " + formatByte(messageType) + " " + formatBytes(data, dataLength) + " " + formatBytes(checksum, CHECKSUM_SIZE) + " " + formatByte(endByte) + "'");
-    return NULL_MSG;
+    return;
   }
 
   Message message = Message(messageType, data, dataLength);
   if (!message.hasChecksum(checksum))
   {
     logger.warn("Checksum mismatch. Recieved: '" + formatByte(START) + " " + formatByte(messageLength) + " " + formatByte(messageType) + " " + formatBytes(data, dataLength) + " " + formatBytes(checksum, CHECKSUM_SIZE) + " " + formatByte(endByte) + "'");
-    return NULL_MSG;
+    return;
   }
 
   logger.debug("message read successfully. #" + formatByte(messageType) + ": [" + formatBytes(data, dataLength) + "]");
-  return message;
+
+  processMessage(logger, message, currentHeight);
 }
 
-void processMessage(Logger &logger, Message message, HeightReading &currentHeight)
+void processMessage(Logger &logger, Message &message, HeightReading &currentHeight)
 {
   byte type = message.type;
   int length = message.getLength();
@@ -95,9 +92,6 @@ void processMessage(Logger &logger, Message message, HeightReading &currentHeigh
 
   switch (type)
   {
-  case NULL_MSG_TYPE:
-    logger.debug("Invalid message");
-    break;
   case DISPLAY_OUT:
   {
     // TODO: Handle {0x77 0x6D 0x31} //ASR error

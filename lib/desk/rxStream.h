@@ -6,6 +6,5 @@
 #include <height.h>
 
 void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight, boolean consumeFully);
-Message readMessage(SoftwareSerial &stream, Logger &logger);
-
-void processMessage(Logger &logger, Message message, HeightReading &currentHeight);
+void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight);
+void processMessage(Logger &logger, Message &message, HeightReading &currentHeight);
