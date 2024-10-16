@@ -23,6 +23,7 @@ public:
   byte* data;
   
   Message(byte type, byte* data, int dataLen);
+  ~Message();
   int getLength();
   void writeBytes(byte* bytes);
   boolean hasChecksum(byte* receivedChecksum);

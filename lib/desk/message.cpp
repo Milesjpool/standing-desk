@@ -16,6 +16,10 @@ Message::Message(byte type, byte* data, int dataLen): type(type), data(data), da
   }
 }
 
+Message::~Message() {
+  delete[] content;
+}
+
 int Message::getLength() {
   return sizeof(START) + contentLength + sizeof(END);
 }
