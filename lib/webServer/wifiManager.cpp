@@ -1,9 +1,11 @@
 #include <wifiManager.h>
 
-WifiManager::WifiManager(Logger &logger, int ledPin): logger(logger), ledPin(ledPin) {}
+WifiManager::WifiManager(Logger &logger, String name, int ledPin): logger(logger), name(name), ledPin(ledPin) {}
 
 void WifiManager::connect(Stream &outputSerial) {
   WiFi.mode(WIFI_STA);
+  WiFi.setHostname(name.c_str());
+  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
   WiFi.begin(ssid, password);
   outputSerial.print("\nConnecting.");
   digitalWrite(ledPin, 0);
@@ -21,4 +23,8 @@ void WifiManager::connect(Stream &outputSerial) {
 
 String WifiManager::getLocalIp() {
   return WiFi.localIP().toString();
+}
+
+String WifiManager::getHostname() {
+  return String(WiFi.getHostname());
 }

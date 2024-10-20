@@ -28,4 +28,6 @@ public:
   void writeBytes(byte* bytes);
   boolean hasChecksum(byte* receivedChecksum);
   String toString();
+  boolean operator==(const Message &other) const;
+  boolean operator!=(const Message &other) const;
 };;

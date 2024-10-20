@@ -13,8 +13,10 @@ private:
     const char* ssid = STA_SSID;
     const char* password = STA_PASS;
     Logger &logger;
+    String name;
 public:
-    WifiManager(Logger &logger, int ledPin);
+    WifiManager(Logger &logger, String name, int ledPin);
     void connect(Stream &outputSerial);
     String getLocalIp();
+    String getHostname();
 };

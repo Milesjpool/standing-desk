@@ -4,10 +4,20 @@
 #include <buttons.h>
 #include <byteUtils.h>
 #include <uri/UriRegex.h>
+#include <uptime.h>
 
 void HeightServer::getRoot()
 {
-  String message = "hello from " + name + "!\r\nLocal IP: " + wifiManager.getLocalIp() + "\r\n";
+  String hostname = wifiManager.getHostname();
+  String ip = wifiManager.getLocalIp();
+  String currentUptime = uptime();
+
+  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\n";
+  
+  if (server.hasArg("f") && server.arg("f") == "JSON") {
+    message = "{ 'hostname': '" + hostname + "', 'ip': '" + ip + "', 'uptime': '" + currentUptime + "' }";
+  }
+
   server.send(200, "text/plain", message);
 }
 
@@ -38,13 +48,18 @@ void HeightServer::getHeight()
     server.send(500, "text/plain", "{ 'error': 'No height reading available' }");
     return;
   }
-  server.send(200, "text/plain", "{ 'height_mm' " + String(reading.getHeight()) + ", 'age_ms': " + String(reading.getAge()) + " }");
+  server.send(200, "text/plain", "{ 'height_mm' " + String(reading.getHeight()) + ", 'age_ms': " + String(reading.getStaleness()) + " }");
 }
 
-
-void HeightServer::postHeightPreset(Message &command)
+void HeightServer::postHeightPreset(Message &presetCommand)
 {
-  deskSerial.issueCommand(command);
+  if (deskMoving)
+  {
+    deskSerial.issueCommand(NO_CMD);
+    delay(COMMAND_INTERVAL);
+  }
+  deskSerial.issueCommand(presetCommand);
+  
   server.send(200, "text/plain", "{ }");
 }
 
@@ -69,11 +84,13 @@ void HeightServer::deleteHeight()
   server.send(200, "text/plain", "{ }");
 }
 
-HeightServer::HeightServer(Logger &logger, String name, DeskSerial &deskSerial, WifiManager wifiManager) : name(name), deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager) {}
+HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager){
+}
 
 void HeightServer::start(int ledPin)
 {
-  if (MDNS.begin(name))
+  String hostname = wifiManager.getHostname();
+  if (MDNS.begin(hostname))
   {
     logger.info("MDNS responder started");
   }
@@ -96,8 +113,25 @@ void HeightServer::start(int ledPin)
 
 void HeightServer::loop()
 {
-  deskSerial.consumeMessage();
   server.handleClient();
+  deskSerial.consumeMessage();
+  updateDeskState();
+}
+
+void HeightServer::updateDeskState()
+{
+  HeightReading height = deskSerial.getLastHeightReading();
+  
+  boolean newState = height.isValid() 
+              && height.getStaleness() < STALENESS_TIMEOUT 
+              && height.getDuration() < MOVEMENT_TIMEOUT;
+
+  if (deskMoving != newState)
+  {
+    String transition = newState ? "started" : "stopped";
+    logger.info("Desk " + transition + " moving.");
+    deskMoving = newState;
+  }
 }
 
 WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, const char *name, int ledPin)

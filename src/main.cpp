@@ -18,8 +18,8 @@ Logger logger(&Serial, LOG_LEVEL);
 const int LED_PIN = LED_BUILTIN;
 
 DeskSerial deskSerial(logger);
-WifiManager wifiManager(logger, LED_PIN);
-HeightServer heightServer(logger, NAME, deskSerial, wifiManager);
+WifiManager wifiManager(logger, NAME, LED_PIN);
+HeightServer heightServer(logger, deskSerial, wifiManager);
 
 void setup(void) {
   Serial.begin(921600); // Inbuilt UART for debugging 

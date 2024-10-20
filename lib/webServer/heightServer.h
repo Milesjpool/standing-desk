@@ -7,14 +7,18 @@
 
 #define PORT 80
 
+const int COMMAND_INTERVAL = 1500;
+const int STALENESS_TIMEOUT = 1000;
+const int MOVEMENT_TIMEOUT = 250;
+
 class HeightServer {
 private:
-    String name;
     Logger &logger;
     WebServer server;
     DeskSerial &deskSerial;
     WifiManager &wifiManager;
-    WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char* name, int ledPin);
+    
+    boolean deskMoving = false;
 
     void getRoot();
     void getHeight();
@@ -23,8 +27,10 @@ private:
     // void postHeight();
     void postCommand();
 
+    WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char* name, int ledPin);
+    void updateDeskState();
 public:
-    HeightServer(Logger &logger, String name, DeskSerial &deskSerial, WifiManager wifiManager);
+    HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager);
     void start(int ledPin);
     void loop();
 };

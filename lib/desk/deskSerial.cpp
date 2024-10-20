@@ -2,7 +2,7 @@
 #include <rxStream.h>
 #include <txStream.h>
 
-DeskSerial::DeskSerial(Logger &logger) : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0) {}
+DeskSerial::DeskSerial(Logger &logger) : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0, 0) {}
 
 void DeskSerial::begin() {
     pinMode(TXWAKE, OUTPUT);

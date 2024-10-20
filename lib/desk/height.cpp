@@ -33,3 +33,28 @@ int decodeHeight(byte* data, int dataLength) {
     
     return height_cm / divisor;
 }
+
+
+
+HeightReading::HeightReading(int millimeters, unsigned long firstRecorded, unsigned long lastRecorded) : height_mm(millimeters), firstRecorded_ms(firstRecorded), lastRecorded_ms(lastRecorded) {}
+boolean HeightReading::isValid() {
+    return height_mm != 0;
+}
+unsigned int HeightReading::getHeight() {
+    return height_mm;
+}
+unsigned long HeightReading::getStaleness() {
+    unsigned long now = millis();
+    if (now < lastRecorded_ms) {
+        return ULONG_MAX - lastRecorded_ms + now;
+    } else {
+        return now - lastRecorded_ms;
+    }
+}
+unsigned long HeightReading::getDuration() {        
+    if (lastRecorded_ms < firstRecorded_ms) {
+        return ULONG_MAX - firstRecorded_ms + lastRecorded_ms;
+    } else {
+        return lastRecorded_ms - firstRecorded_ms;
+    }
+}

@@ -100,7 +100,9 @@ void processMessage(Logger &logger, Message &message, HeightReading &currentHeig
     int height = decodeHeight(message.data, message.dataLength);
     if (height > 0)
     {
-      currentHeight = HeightReading(height, millis());
+      unsigned long firstRecorded = height == currentHeight.height_mm ? currentHeight.firstRecorded_ms : millis();
+      unsigned long lastRecorded = millis();
+      currentHeight = HeightReading(height, firstRecorded, lastRecorded);
       logger.info("Received height value: " + String(height));
     } else if (height == 0)
     {

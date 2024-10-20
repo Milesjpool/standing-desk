@@ -45,3 +45,22 @@ String Message::toString() {
   String str = formatBytes(content, contentLength);
   return str;
 }
+
+boolean Message::operator==(const Message &other) const {
+  if (type != other.type) {
+    return false;
+  }
+  if (dataLength != other.dataLength) {
+    return false;
+  }
+  for (int i = 0; i < dataLength; i++) {
+    if (data[i] != other.data[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+boolean Message::operator!=(const Message &other) const {
+  return !(*this == other);
+}
