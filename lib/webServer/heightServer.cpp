@@ -53,7 +53,7 @@ void HeightServer::getHeight()
 
 void HeightServer::postHeightPreset(Message &presetCommand)
 {
-  if (deskMoving || targetHeight != 0)
+  if (movementDaemon.isMoving() || targetHeight != 0)
   {
     abortCommand();
     delay(COMMAND_INTERVAL);
@@ -96,7 +96,7 @@ void HeightServer::deleteHeight()
   server.send(200, "text/plain", "{ }");
 }
 
-HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager){
+HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial){
 }
 
 void HeightServer::start(int ledPin)
@@ -135,7 +135,7 @@ void HeightServer::loop()
   server.handleClient();
   deskSerial.consumeMessage();
   moveTowardsTargetHeight();
-  updateDeskMovingState();
+  movementDaemon.update();
 }
 
 void HeightServer::moveTowardsTargetHeight()
@@ -178,20 +178,7 @@ void HeightServer::moveTowardsTargetHeight()
 //   }
 // }
 
-void HeightServer::updateDeskMovingState()
-{
-  HeightReading height = deskSerial.getLastHeightReading();
 
-  boolean newState = height.isValid() && !height.isStale()
-              && height.getDuration() < MOVEMENT_TIMEOUT;
-
-  if (deskMoving != newState)
-  {
-    String transition = newState ? "started" : "stopped";
-    logger.info("Desk " + transition + " moving.");
-    deskMoving = newState;
-  }
-}
 
 void HeightServer::abortCommand()
 {
