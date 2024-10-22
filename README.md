@@ -35,7 +35,7 @@ Inspiration drawn from:
 
 - Improve height query responsiveness.
 - Move desk to specific height (`PUT /height/{height_mm}`?)
-- Set presets from API?
+- Save presets from API?
 - Continuous UP/DOWN button presses? Web-sockets?
 - Voice controls?
 
