@@ -109,18 +109,22 @@ void HeightServer::start(int ledPin)
 
   server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET /", ledPin));
 
-  //TODO: Disable this in release.
-  server.on(UriRegex("/command/([0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
+  #ifdef COMMAND_EXPLORER
+    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
+  #endif
 
   server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height", ledPin));
   server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE /height", ledPin));
-  server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST /height/*", ledPin));
   server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST /height/preset/1", ledPin));
   server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST /height/preset/2", ledPin));
   server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST /height/preset/3", ledPin));
   server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST /height/preset/4", ledPin));
   server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST /height/preset/stand", ledPin));
   server.on("/height/preset/sit",   HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)),   "POST /height/preset/sit", ledPin));
+  
+  #ifdef HEIGHT_INPUT
+    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST /height/*", ledPin));
+  #endif
 
   server.begin();
   logger.info("HTTP server started");
@@ -136,7 +140,7 @@ void HeightServer::loop()
 
 void HeightServer::moveTowardsTargetHeight()
 {
-// TODO: implement this
+  // TODO: implement this
   targetHeight = 0;
   targetHeightDelta = 0;
 }
