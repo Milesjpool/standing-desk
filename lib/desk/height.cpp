@@ -58,3 +58,6 @@ unsigned long HeightReading::getDuration() {
         return lastRecorded_ms - firstRecorded_ms;
     }
 }
+boolean HeightReading::isStale() {
+    return getStaleness() > STALENESS_THRESHOLD;
+}

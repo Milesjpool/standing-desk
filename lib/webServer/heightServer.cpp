@@ -53,9 +53,9 @@ void HeightServer::getHeight()
 
 void HeightServer::postHeightPreset(Message &presetCommand)
 {
-  if (deskMoving)
+  if (deskMoving || targetHeight != 0)
   {
-    deskSerial.issueCommand(NO_CMD);
+    abortCommand();
     delay(COMMAND_INTERVAL);
   }
   deskSerial.issueCommand(presetCommand);
@@ -63,24 +63,36 @@ void HeightServer::postHeightPreset(Message &presetCommand)
   server.send(200, "text/plain", "{ }");
 }
 
-// void HeightServer::postHeight()
-// {
-//   //   String message;
-//   //   // Stop all ongoing operations
-//   //   if(currentOperation != NOOP) {
-//   //     // 409 is conflict status code
-//   //     server.send(409, "text/plain", "A height adjustment operation is going on, please try later");
-//   //   }else{
-//   //     message = server.arg(0);
-//   //     setHeight(atoi(message.c_str()));
-//   //     server.send(200, "text/plain", message);
-//   //   }
-//   server.send(405, "text/plain", "Not implemented");
-// }
+void HeightServer::postHeight()
+{
+  
+  String heightString = server.pathArg(0);
+  int heightValue = atoi(heightString.c_str());
+  if (heightValue < MIN_HEIGHT || heightValue > MAX_HEIGHT)
+  {
+    server.send(400, "text/plain", "{ 'error': 'Invalid height' }");
+    return;
+  }
+  
+  abortCommand();
+  delay(COMMAND_INTERVAL);
+  deskSerial.consumeStream();
+  HeightReading currentHeight = deskSerial.getLastHeightReading();
+
+  if (currentHeight.isStale())
+  {
+    server.send(500, "text/plain", "{ 'error': 'Unable to get current height' }");
+    return;
+  }
+
+  targetHeight = heightValue;
+  targetHeightDelta = targetHeight - currentHeight.getHeight();
+  server.send(400, "text/plain", "{ 'error': 'Not implemented', 'requested_height': " + String(targetHeight) + " }");
+}
 
 void HeightServer::deleteHeight()
 {
-  deskSerial.issueCommand(NO_CMD);
+  abortCommand();
   server.send(200, "text/plain", "{ }");
 }
 
@@ -96,16 +108,19 @@ void HeightServer::start(int ledPin)
   }
 
   server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET /", ledPin));
+
+  //TODO: Disable this in release.
   server.on(UriRegex("/command/([0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
 
   server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height", ledPin));
   server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE /height", ledPin));
-  server.on("/height/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST /height/1", ledPin));
-  server.on("/height/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST /height/2", ledPin));
-  server.on("/height/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST /height/3", ledPin));
-  server.on("/height/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST /height/4", ledPin));
-  server.on("/height/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST /height/stand", ledPin));
-  server.on("/height/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), "POST /height/sit", ledPin));
+  server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST /height/*", ledPin));
+  server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST /height/preset/1", ledPin));
+  server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST /height/preset/2", ledPin));
+  server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST /height/preset/3", ledPin));
+  server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST /height/preset/4", ledPin));
+  server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST /height/preset/stand", ledPin));
+  server.on("/height/preset/sit",   HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)),   "POST /height/preset/sit", ledPin));
 
   server.begin();
   logger.info("HTTP server started");
@@ -115,15 +130,55 @@ void HeightServer::loop()
 {
   server.handleClient();
   deskSerial.consumeMessage();
-  updateDeskState();
+  moveTowardsTargetHeight();
+  updateDeskMovingState();
 }
 
-void HeightServer::updateDeskState()
+void HeightServer::moveTowardsTargetHeight()
+{
+// TODO: implement this
+  targetHeight = 0;
+  targetHeightDelta = 0;
+}
+
+// void HeightServer::moveTowardsTargetHeight()
+// {
+//   if (targetHeight == 0)
+//   {
+//     return;
+//   }
+
+//   HeightReading currentHeight = deskSerial.getLastHeightReading();
+
+//   if (currentHeight.getStaleness() < (abs(targetHeightDelta) * 30) + 50)
+//   {
+//     // logger.warn("Unable to get current height.");
+
+//     //TODO: add retry & timeout on target height.    
+//     // deskSerial.issueCommand(NO_CMD); 
+//     // abortCommand();
+//     return;
+//   }
+
+//   if (targetHeight > currentHeight.getHeight() && targetHeightDelta > 0) {
+//     targetHeightDelta = targetHeight - currentHeight.getHeight();
+//     deskSerial.issueCommand(UP_CMD);
+    
+//     deskSerial.consumeStream();
+//   } else if (targetHeight < currentHeight.getHeight() && targetHeightDelta < 0) {
+//     targetHeightDelta = targetHeight - currentHeight.getHeight();
+//     deskSerial.issueCommand(DOWN_CMD);
+//     deskSerial.consumeStream();
+//   } else {
+//     abortCommand();
+//   }
+// }
+
+void HeightServer::updateDeskMovingState()
 {
   HeightReading height = deskSerial.getLastHeightReading();
-  
-  boolean newState = height.isValid() 
-              && height.getStaleness() < STALENESS_TIMEOUT 
+
+  boolean newState = height.isValid() && !height.isStale()
               && height.getDuration() < MOVEMENT_TIMEOUT;
 
   if (deskMoving != newState)
@@ -132,6 +187,13 @@ void HeightServer::updateDeskState()
     logger.info("Desk " + transition + " moving.");
     deskMoving = newState;
   }
+}
+
+void HeightServer::abortCommand()
+{
+  targetHeight = 0;
+  targetHeightDelta = 0;
+  deskSerial.issueCommand(NO_CMD);
 }
 
 WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, const char *name, int ledPin)

@@ -7,9 +7,12 @@
 
 #define PORT 80
 
-const int COMMAND_INTERVAL = 1500;
-const int STALENESS_TIMEOUT = 1000;
-const int MOVEMENT_TIMEOUT = 250;
+const uint COMMAND_INTERVAL = 1500; // Min time between accepted commands.
+const uint MOVEMENT_TIMEOUT = 250; // Max height duration on a fresh reading, before considering the desk stopped.
+
+
+const uint MIN_HEIGHT = 675;
+const uint MAX_HEIGHT = 1260;
 
 class HeightServer {
 private:
@@ -18,17 +21,21 @@ private:
     DeskSerial &deskSerial;
     WifiManager &wifiManager;
     
+    uint targetHeight = 0;
+    int targetHeightDelta = 0;
     boolean deskMoving = false;
 
     void getRoot();
     void getHeight();
+    void postHeight();
     void postHeightPreset(Message &command);
     void deleteHeight();
-    // void postHeight();
     void postCommand();
 
     WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char* name, int ledPin);
-    void updateDeskState();
+    void abortCommand();
+    void moveTowardsTargetHeight();
+    void updateDeskMovingState();
 public:
     HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager);
     void start(int ledPin);
