@@ -13,12 +13,12 @@ void HeightServer::getRoot()
   String currentUptime = uptime();
   int wifiConnections = wifiManager.getReconnectionCount();
 
-  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\nWiFi Connections: " + String(wifiConnections) + "\r\n";
+  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\nWiFi Connections: " + String(wifiConnections) + "\r\nEnabled: " + String(enabled) + "\r\n";
   String contentType = "text/plain";
 
   if (server.hasArg("f") && server.arg("f") == "JSON")
   {
-    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\", \"wifi_connections\": " + String(wifiConnections) + " }";
+    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\", \"wifi_connections\": " + String(wifiConnections) + ", \"enabled\": " + String(enabled) + " }";
     contentType = "application/json";
   }
 
@@ -28,6 +28,12 @@ void HeightServer::getRoot()
 // E.g curl -XPOST http://.../command/02/data/0100
 void HeightServer::postCommand()
 {
+  if (!enabled)
+  {
+    server.send(400, "application/json", "{ \"error\": \"Server is disabled\" }");
+    return;
+  }
+
   String typeString = server.pathArg(0);
   byte type = parseByte(const_cast<char *>(typeString.c_str()));
 
@@ -47,7 +53,7 @@ void HeightServer::getHeight()
 
   // Only request new height if the cached reading is stale
   // This avoids interrupting ongoing movements
-  if (!reading.isValid() || reading.isStale())
+  if (enabled && (!reading.isValid() || reading.isStale()))
   {
     deskSerial.issueCommand(NO_CMD);
     deskSerial.consumeStream();
@@ -64,6 +70,12 @@ void HeightServer::getHeight()
 
 void HeightServer::postHeightPreset(Message &presetCommand)
 {
+  if (!enabled)
+  {
+    server.send(400, "application/json", "{ \"error\": \"Server is disabled\" }");
+    return;
+  }
+
   if (movementDaemon.isMoving() || targetHeight != 0)
   {
     abortCommand();
@@ -76,6 +88,11 @@ void HeightServer::postHeightPreset(Message &presetCommand)
 
 void HeightServer::postHeight()
 {
+  if (!enabled)
+  {
+    server.send(400, "application/json", "{ \"error\": \"Server is disabled\" }");
+    return;
+  }
 
   String heightString = server.pathArg(0);
   int heightValue = atoi(heightString.c_str());
@@ -107,6 +124,23 @@ void HeightServer::deleteHeight()
   server.send(200, "application/json", "{ }");
 }
 
+void HeightServer::getEnabled()
+{
+  server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
+}
+
+void HeightServer::postEnabled()
+{
+  enabled = true;
+  server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
+}
+
+void HeightServer::deleteEnabled()
+{
+  enabled = false;
+  server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
+}
+
 HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial)
 {
 }
@@ -125,6 +159,9 @@ void HeightServer::start(int ledPin)
   server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
 #endif
 
+  server.on("/enabled", HTTP_GET, trackRequest(std::bind(&HeightServer::getEnabled, this), "GET /enabled", ledPin));
+  server.on("/enabled", HTTP_POST, trackRequest(std::bind(&HeightServer::postEnabled, this), "POST /enabled", ledPin));
+  server.on("/enabled", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteEnabled, this), "DELETE /enabled", ledPin));
   server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height", ledPin));
   server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE /height", ledPin));
   server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST /height/preset/1", ledPin));
