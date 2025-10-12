@@ -20,7 +20,7 @@ private:
     WebServer server;
     DeskSerial &deskSerial;
     WifiManager &wifiManager;
-    MovementDaemon &movementDaemon;
+    MovementDaemon movementDaemon;
 
     uint targetHeight = 0;
     int targetHeightDelta = 0;
