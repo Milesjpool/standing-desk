@@ -21,8 +21,9 @@ DeskSerial deskSerial(logger);
 WifiManager wifiManager(logger, NAME, LED_PIN);
 HeightServer heightServer(logger, deskSerial, wifiManager);
 
-void setup(void) {
-  Serial.begin(921600); // Inbuilt UART for debugging 
+void setup(void)
+{
+  Serial.begin(921600); // Inbuilt UART for debugging
 
   pinMode(LED_PIN, OUTPUT);
 
@@ -31,6 +32,15 @@ void setup(void) {
   heightServer.start(LED_PIN);
 }
 
-void loop(void) {
+void loop(void)
+{
+  // Monitor and reconnect WiFi if disconnected
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    logger.warn("WiFi disconnected, reconnecting...");
+    wifiManager.connect(Serial);
+    heightServer.start(LED_PIN);
+  }
+
   heightServer.loop();
 }
