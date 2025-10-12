@@ -141,6 +141,14 @@ void HeightServer::start(int ledPin)
   logger.info("HTTP server started");
 }
 
+void HeightServer::stop()
+{
+  server.stop();
+  server.close();
+  MDNS.end();
+  logger.info("HTTP server stopped");
+}
+
 void HeightServer::loop()
 {
   server.handleClient();

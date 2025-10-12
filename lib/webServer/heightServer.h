@@ -39,5 +39,6 @@ private:
 public:
     HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager);
     void start(int ledPin);
+    void stop();
     void loop();
 };

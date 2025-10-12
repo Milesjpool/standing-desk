@@ -38,6 +38,7 @@ void loop(void)
   if (WiFi.status() != WL_CONNECTED)
   {
     logger.warn("WiFi disconnected, reconnecting...");
+    heightServer.stop();
     wifiManager.connect(Serial);
     heightServer.start(LED_PIN);
   }
