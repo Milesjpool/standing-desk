@@ -13,13 +13,15 @@ void HeightServer::getRoot()
   String currentUptime = uptime();
 
   String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\n";
+  String contentType = "text/plain";
 
   if (server.hasArg("f") && server.arg("f") == "JSON")
   {
-    message = "{ 'hostname': '" + hostname + "', 'ip': '" + ip + "', 'uptime': '" + currentUptime + "' }";
+    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\" }";
+    contentType = "application/json";
   }
 
-  server.send(200, "text/plain", message);
+  server.send(200, contentType, message);
 }
 
 // E.g curl -XPOST http://.../command/02/data/0100
@@ -35,7 +37,7 @@ void HeightServer::postCommand()
 
   Message command(type, data, length);
   deskSerial.issueCommand(command);
-  server.send(200, "text/plain", "{ 'type': '" + formatByte(type) + "', 'body': '" + formatBytes(data, length) + "' }");
+  server.send(200, "application/json", "{ \"type\": \"" + formatByte(type) + "\", \"body\": \"" + formatBytes(data, length) + "\" }");
 }
 
 void HeightServer::getHeight()
@@ -46,10 +48,10 @@ void HeightServer::getHeight()
   HeightReading reading = deskSerial.getLastHeightReading();
   if (!reading.isValid())
   {
-    server.send(500, "text/plain", "{ 'error': 'No height reading available' }");
+    server.send(500, "application/json", "{ \"error\": \"No height reading available\" }");
     return;
   }
-  server.send(200, "text/plain", "{ 'height_mm' " + String(reading.getHeight()) + ", 'age_ms': " + String(reading.getStaleness()) + " }");
+  server.send(200, "application/json", "{ \"height_mm\": " + String(reading.getHeight()) + ", \"age_ms\": " + String(reading.getStaleness()) + " }");
 }
 
 void HeightServer::postHeightPreset(Message &presetCommand)
@@ -61,7 +63,7 @@ void HeightServer::postHeightPreset(Message &presetCommand)
   }
   deskSerial.issueCommand(presetCommand);
 
-  server.send(200, "text/plain", "{ }");
+  server.send(200, "application/json", "{ }");
 }
 
 void HeightServer::postHeight()
@@ -71,7 +73,7 @@ void HeightServer::postHeight()
   int heightValue = atoi(heightString.c_str());
   if (heightValue < MIN_HEIGHT || heightValue > MAX_HEIGHT)
   {
-    server.send(400, "text/plain", "{ 'error': 'Invalid height' }");
+    server.send(400, "application/json", "{ \"error\": \"Invalid height\" }");
     return;
   }
 
@@ -82,19 +84,19 @@ void HeightServer::postHeight()
 
   if (currentHeight.isStale())
   {
-    server.send(500, "text/plain", "{ 'error': 'Unable to get current height' }");
+    server.send(500, "application/json", "{ \"error\": \"Unable to get current height\" }");
     return;
   }
 
   targetHeight = heightValue;
   targetHeightDelta = targetHeight - currentHeight.getHeight();
-  server.send(400, "text/plain", "{ 'error': 'Not implemented', 'requested_height': " + String(targetHeight) + " }");
+  server.send(400, "application/json", "{ \"error\": \"Not implemented\", \"requested_height\": " + String(targetHeight) + " }");
 }
 
 void HeightServer::deleteHeight()
 {
   abortCommand();
-  server.send(200, "text/plain", "{ }");
+  server.send(200, "application/json", "{ }");
 }
 
 HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial)
