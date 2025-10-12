@@ -47,7 +47,7 @@ void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentH
   byte data[dataLength];
   byte checksum[CHECKSUM_SIZE];
 
-  int timeout = 1000;
+  int timeout = 50; // 50ms timeout to avoid blocking the main loop
   int remainingLength = dataLength + CHECKSUM_SIZE + sizeof(END);
   while (stream.available() < remainingLength && timeout > 0)
   {
@@ -104,7 +104,8 @@ void processMessage(Logger &logger, Message &message, HeightReading &currentHeig
       unsigned long lastRecorded = millis();
       currentHeight = HeightReading(height, firstRecorded, lastRecorded);
       logger.info("Received height value: " + String(height));
-    } else if (height == 0)
+    }
+    else if (height == 0)
     {
       logger.debug("Ignored empty height message: " + message.toString());
     }
