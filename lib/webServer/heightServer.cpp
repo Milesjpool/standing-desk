@@ -11,14 +11,14 @@ void HeightServer::getRoot()
   String hostname = wifiManager.getHostname();
   String ip = wifiManager.getLocalIp();
   String currentUptime = uptime();
-  int reconnections = wifiManager.getReconnectionCount();
+  int wifiConnections = wifiManager.getReconnectionCount();
 
-  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\nReconnections: " + String(reconnections) + "\r\n";
+  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\nWiFi Connections: " + String(wifiConnections) + "\r\n";
   String contentType = "text/plain";
 
   if (server.hasArg("f") && server.arg("f") == "JSON")
   {
-    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\", \"reconnections\": " + String(reconnections) + " }";
+    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\", \"wifi_connections\": " + String(wifiConnections) + " }";
     contentType = "application/json";
   }
 
@@ -107,7 +107,7 @@ void HeightServer::deleteHeight()
   server.send(200, "application/json", "{ }");
 }
 
-HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial)
+HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial)
 {
 }
 
