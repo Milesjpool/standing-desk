@@ -11,13 +11,14 @@ void HeightServer::getRoot()
   String hostname = wifiManager.getHostname();
   String ip = wifiManager.getLocalIp();
   String currentUptime = uptime();
+  int reconnections = wifiManager.getReconnectionCount();
 
-  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\n";
+  String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\nReconnections: " + String(reconnections) + "\r\n";
   String contentType = "text/plain";
 
   if (server.hasArg("f") && server.arg("f") == "JSON")
   {
-    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\" }";
+    message = "{ \"hostname\": \"" + hostname + "\", \"ip\": \"" + ip + "\", \"uptime\": \"" + currentUptime + "\", \"reconnections\": " + String(reconnections) + " }";
     contentType = "application/json";
   }
 
