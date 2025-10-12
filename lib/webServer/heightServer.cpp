@@ -42,10 +42,17 @@ void HeightServer::postCommand()
 
 void HeightServer::getHeight()
 {
-  deskSerial.issueCommand(NO_CMD);
-  deskSerial.consumeStream();
-
   HeightReading reading = deskSerial.getLastHeightReading();
+
+  // Only request new height if the cached reading is stale
+  // This avoids interrupting ongoing movements
+  if (!reading.isValid() || reading.isStale())
+  {
+    deskSerial.issueCommand(NO_CMD);
+    deskSerial.consumeStream();
+    reading = deskSerial.getLastHeightReading();
+  }
+
   if (!reading.isValid())
   {
     server.send(500, "application/json", "{ \"error\": \"No height reading available\" }");
