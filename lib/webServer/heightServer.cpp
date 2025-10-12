@@ -13,8 +13,9 @@ void HeightServer::getRoot()
   String currentUptime = uptime();
 
   String message = "hello from " + hostname + "!\r\nLocal IP: " + ip + "\r\nUptime: " + currentUptime + "\r\n";
-  
-  if (server.hasArg("f") && server.arg("f") == "JSON") {
+
+  if (server.hasArg("f") && server.arg("f") == "JSON")
+  {
     message = "{ 'hostname': '" + hostname + "', 'ip': '" + ip + "', 'uptime': '" + currentUptime + "' }";
   }
 
@@ -25,12 +26,12 @@ void HeightServer::getRoot()
 void HeightServer::postCommand()
 {
   String typeString = server.pathArg(0);
-  byte type = parseByte(const_cast<char*>(typeString.c_str()));
-  
+  byte type = parseByte(const_cast<char *>(typeString.c_str()));
+
   String dataString = server.pathArg(1);
-  int length = dataString.length()/2;
+  int length = dataString.length() / 2;
   byte data[length] = {0};
-  parseBytes(const_cast<char*>(dataString.c_str()), data, length);
+  parseBytes(const_cast<char *>(dataString.c_str()), data, length);
 
   Message command(type, data, length);
   deskSerial.issueCommand(command);
@@ -59,13 +60,13 @@ void HeightServer::postHeightPreset(Message &presetCommand)
     delay(COMMAND_INTERVAL);
   }
   deskSerial.issueCommand(presetCommand);
-  
+
   server.send(200, "text/plain", "{ }");
 }
 
 void HeightServer::postHeight()
 {
-  
+
   String heightString = server.pathArg(0);
   int heightValue = atoi(heightString.c_str());
   if (heightValue < MIN_HEIGHT || heightValue > MAX_HEIGHT)
@@ -73,7 +74,7 @@ void HeightServer::postHeight()
     server.send(400, "text/plain", "{ 'error': 'Invalid height' }");
     return;
   }
-  
+
   abortCommand();
   delay(COMMAND_INTERVAL);
   deskSerial.consumeStream();
@@ -96,7 +97,8 @@ void HeightServer::deleteHeight()
   server.send(200, "text/plain", "{ }");
 }
 
-HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial){
+HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager wifiManager) : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial)
+{
 }
 
 void HeightServer::start(int ledPin)
@@ -109,9 +111,9 @@ void HeightServer::start(int ledPin)
 
   server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET /", ledPin));
 
-  #ifdef COMMAND_EXPLORER
-    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
-  #endif
+#ifdef COMMAND_EXPLORER
+  server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
+#endif
 
   server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height", ledPin));
   server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE /height", ledPin));
@@ -120,11 +122,11 @@ void HeightServer::start(int ledPin)
   server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST /height/preset/3", ledPin));
   server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST /height/preset/4", ledPin));
   server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST /height/preset/stand", ledPin));
-  server.on("/height/preset/sit",   HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)),   "POST /height/preset/sit", ledPin));
-  
-  #ifdef HEIGHT_INPUT
-    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST /height/*", ledPin));
-  #endif
+  server.on("/height/preset/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), "POST /height/preset/sit", ledPin));
+
+#ifdef HEIGHT_INPUT
+  server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST /height/*", ledPin));
+#endif
 
   server.begin();
   logger.info("HTTP server started");
@@ -158,8 +160,8 @@ void HeightServer::moveTowardsTargetHeight()
 //   {
 //     // logger.warn("Unable to get current height.");
 
-//     //TODO: add retry & timeout on target height.    
-//     // deskSerial.issueCommand(NO_CMD); 
+//     //TODO: add retry & timeout on target height.
+//     // deskSerial.issueCommand(NO_CMD);
 //     // abortCommand();
 //     return;
 //   }
@@ -167,7 +169,7 @@ void HeightServer::moveTowardsTargetHeight()
 //   if (targetHeight > currentHeight.getHeight() && targetHeightDelta > 0) {
 //     targetHeightDelta = targetHeight - currentHeight.getHeight();
 //     deskSerial.issueCommand(UP_CMD);
-    
+
 //     deskSerial.consumeStream();
 //   } else if (targetHeight < currentHeight.getHeight() && targetHeightDelta < 0) {
 //     targetHeightDelta = targetHeight - currentHeight.getHeight();
@@ -177,8 +179,6 @@ void HeightServer::moveTowardsTargetHeight()
 //     abortCommand();
 //   }
 // }
-
-
 
 void HeightServer::abortCommand()
 {
