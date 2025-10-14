@@ -27,6 +27,7 @@ private:
     uint targetHeight = 0;
     int targetHeightDelta = 0;
     bool enabled = true;
+    int ledPin;
 
     void getRoot();
     void getStatus();
@@ -38,7 +39,7 @@ private:
     void getEnabled();
     void postEnabled();
     void deleteEnabled();
-    WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, int ledPin, const char *method, const char *endpoint);
+    WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char *method, const char *endpoint);
     void abortCommand();
     void moveTowardsTargetHeight();
 

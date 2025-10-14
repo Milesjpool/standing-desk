@@ -214,33 +214,34 @@ HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &
 
 void HeightServer::start(int ledPin)
 {
+    this->ledPin = ledPin;
     String hostname = wifiManager.getHostname();
     if (MDNS.begin(hostname))
     {
         logger.info("MDNS responder started");
     }
 
-    server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), ledPin, "GET", "/"));
-    server.on("/status", HTTP_GET, trackRequest(std::bind(&HeightServer::getStatus, this), ledPin, "GET", "/status"));
+    server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET", "/"));
+    server.on("/status", HTTP_GET, trackRequest(std::bind(&HeightServer::getStatus, this), "GET", "/status"));
 
 #ifdef COMMAND_EXPLORER
-    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), ledPin, "POST", "/command"));
+    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST", "/command"));
 #endif
 
-    server.on("/enabled", HTTP_GET, trackRequest(std::bind(&HeightServer::getEnabled, this), ledPin, "GET", "/enabled"));
-    server.on("/enabled", HTTP_POST, trackRequest(std::bind(&HeightServer::postEnabled, this), ledPin, "POST", "/enabled"));
-    server.on("/enabled", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteEnabled, this), ledPin, "DELETE", "/enabled"));
-    server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), ledPin, "GET", "/height"));
-    server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), ledPin, "DELETE", "/height"));
-    server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), ledPin, "POST", "/height/preset/1"));
-    server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), ledPin, "POST", "/height/preset/2"));
-    server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), ledPin, "POST", "/height/preset/3"));
-    server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), ledPin, "POST", "/height/preset/4"));
-    server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), ledPin, "POST", "/height/preset/stand"));
-    server.on("/height/preset/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), ledPin, "POST", "/height/preset/sit"));
+    server.on("/enabled", HTTP_GET, trackRequest(std::bind(&HeightServer::getEnabled, this), "GET", "/enabled"));
+    server.on("/enabled", HTTP_POST, trackRequest(std::bind(&HeightServer::postEnabled, this), "POST", "/enabled"));
+    server.on("/enabled", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteEnabled, this), "DELETE", "/enabled"));
+    server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET", "/height"));
+    server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE", "/height"));
+    server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST", "/height/preset/1"));
+    server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST", "/height/preset/2"));
+    server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST", "/height/preset/3"));
+    server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST", "/height/preset/4"));
+    server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST", "/height/preset/stand"));
+    server.on("/height/preset/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), "POST", "/height/preset/sit"));
 
 #ifdef HEIGHT_INPUT
-    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), ledPin, "POST", "/height/{mm}"));
+    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST", "/height/{mm}"));
 #endif
 
     server.begin();
@@ -310,9 +311,9 @@ void HeightServer::abortCommand()
     deskSerial.issueCommand(NO_CMD);
 }
 
-WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, int ledPin, const char *method, const char *endpoint)
+WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, const char *method, const char *endpoint)
 {
-    return [handler, ledPin, method, endpoint, this]()
+    return [handler, method, endpoint, this]()
     {
         digitalWrite(ledPin, 1);
         logger.info("Request received: " + String(method) + " " + String(endpoint));
