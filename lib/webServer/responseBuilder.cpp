@@ -42,27 +42,30 @@ String ResponseBuilder::buildStatusJson(
     String chipModel = ESP.getChipModel();
     bool isMoving = movementDaemon.isMoving();
 
-    String message = "{ \"hostname\": \"" + hostname +
-                     "\", \"ip\": \"" + ip +
-                     "\", \"mac\": \"" + macAddress +
-                     "\", \"uptime\": \"" + currentUptime +
-                     "\", \"wifi_ssid\": \"" + ssid +
-                     "\", \"wifi_connections\": " + String(wifiConnections) +
-                     ", \"wifi_rssi\": " + String(rssi) +
-                     ", \"chip_model\": \"" + chipModel +
-                     "\", \"flash_total_bytes\": " + String(flashSize) +
-                     ", \"flash_used_bytes\": " + String(flashUsed) +
-                     ", \"flash_free_bytes\": " + String(flashFree) +
-                     ", \"flash_usage_percent\": " + String(flashUsagePercent) +
-                     ", \"heap_total_bytes\": " + String(totalHeap) +
-                     ", \"heap_used_bytes\": " + String(usedHeap) +
-                     ", \"heap_free_bytes\": " + String(freeHeap) +
-                     ", \"heap_usage_percent\": " + String(heapUsagePercent) +
-                     ", \"firmware_version\": \"" + String(__DATE__) + " " + String(__TIME__) +
+    String message = "{ \"uptime\": \"" + currentUptime +
                      "\", \"boot_count\": " + String(deviceStats.getBootCount()) +
                      ", \"last_reset_reason\": \"" + deviceStats.getResetReason() +
-                     "\", \"total_runtime_hours\": " + String(deviceStats.getTotalRuntimeHours()) +
-                     ", \"enabled\": " + String(enabled);
+                     "\", \"total_runtime_hours\": " + String(deviceStats.getTotalRuntimeHours());
+
+    message += ", \"hardware\": { \"chip_model\": \"" + chipModel +
+               "\", \"firmware_version\": \"" + String(__DATE__) + " " + String(__TIME__) + "\" }";
+
+    message += ", \"connectivity\": { \"hostname\": \"" + hostname +
+               "\", \"ip\": \"" + ip +
+               "\", \"mac\": \"" + macAddress +
+               "\", \"wifi_ssid\": \"" + ssid +
+               "\", \"wifi_connections\": " + String(wifiConnections) +
+               ", \"wifi_rssi\": " + String(rssi) + " }";
+
+    message += ", \"flash\": { \"total_bytes\": " + String(flashSize) +
+               ", \"used_bytes\": " + String(flashUsed) +
+               ", \"free_bytes\": " + String(flashFree) +
+               ", \"usage_percent\": " + String(flashUsagePercent) + " }";
+
+    message += ", \"heap\": { \"total_bytes\": " + String(totalHeap) +
+               ", \"used_bytes\": " + String(usedHeap) +
+               ", \"free_bytes\": " + String(freeHeap) +
+               ", \"usage_percent\": " + String(heapUsagePercent) + " }";
 
     message += ", \"api_requests\": { \"total\": " + String(deviceStats.getTotalApiRequests());
 
@@ -88,16 +91,20 @@ String ResponseBuilder::buildStatusJson(
     message += ", \"errors\": { \"failed_height_readings\": " + String(deviceStats.getFailedHeightReadings()) +
                ", \"communication_errors\": " + String(deviceStats.getCommunicationErrors()) + " }";
 
+    message += ", \"desk\": { \"control_enabled\": " + String(enabled ? "true" : "false");
+
     if (reading.isValid())
     {
-        message += ", \"desk\": { \"height_mm\": " + String(reading.getHeight()) +
+        message += ", \"height_mm\": " + String(reading.getHeight()) +
                    ", \"age_ms\": " + String(reading.getStaleness()) +
-                   ", \"is_moving\": " + String(isMoving ? "true" : "false") + " }";
+                   ", \"is_moving\": " + String(isMoving ? "true" : "false");
     }
     else
     {
-        message += ", \"desk\": null";
+        message += ", \"height_mm\": null, \"age_ms\": null, \"is_moving\": false";
     }
+
+    message += " }";
 
     message += " }";
 
