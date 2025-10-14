@@ -30,17 +30,36 @@ String ResponseBuilder::buildStatusJson(
     String macAddress = WiFi.macAddress();
     HeightReading reading = deskSerial.getLastHeightReading();
     int rssi = WiFi.RSSI();
+    String ssid = WiFi.SSID();
     uint32_t freeHeap = ESP.getFreeHeap();
+    uint32_t totalHeap = ESP.getHeapSize();
+    uint32_t usedHeap = totalHeap - freeHeap;
+    uint32_t heapUsagePercent = 100 - ((freeHeap * 100) / totalHeap);
+    uint32_t flashSize = ESP.getFlashChipSize();
+    uint32_t flashUsed = ESP.getSketchSize();
+    uint32_t flashFree = ESP.getFreeSketchSpace();
+    uint32_t flashUsagePercent = (flashUsed * 100) / flashSize;
+    String chipModel = ESP.getChipModel();
     bool isMoving = movementDaemon.isMoving();
 
     String message = "{ \"hostname\": \"" + hostname +
                      "\", \"ip\": \"" + ip +
                      "\", \"mac\": \"" + macAddress +
                      "\", \"uptime\": \"" + currentUptime +
+                     "\", \"wifi_ssid\": \"" + ssid +
                      "\", \"wifi_connections\": " + String(wifiConnections) +
                      ", \"wifi_rssi\": " + String(rssi) +
-                     ", \"free_heap_bytes\": " + String(freeHeap) +
-                     ", \"boot_count\": " + String(deviceStats.getBootCount()) +
+                     ", \"chip_model\": \"" + chipModel +
+                     "\", \"flash_total_bytes\": " + String(flashSize) +
+                     ", \"flash_used_bytes\": " + String(flashUsed) +
+                     ", \"flash_free_bytes\": " + String(flashFree) +
+                     ", \"flash_usage_percent\": " + String(flashUsagePercent) +
+                     ", \"heap_total_bytes\": " + String(totalHeap) +
+                     ", \"heap_used_bytes\": " + String(usedHeap) +
+                     ", \"heap_free_bytes\": " + String(freeHeap) +
+                     ", \"heap_usage_percent\": " + String(heapUsagePercent) +
+                     ", \"firmware_version\": \"" + String(__DATE__) + " " + String(__TIME__) +
+                     "\", \"boot_count\": " + String(deviceStats.getBootCount()) +
                      ", \"last_reset_reason\": \"" + deviceStats.getResetReason() +
                      "\", \"total_runtime_hours\": " + String(deviceStats.getTotalRuntimeHours()) +
                      ", \"enabled\": " + String(enabled);
