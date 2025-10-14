@@ -27,6 +27,7 @@ private:
     bool enabled = true;
 
     void getRoot();
+    void getStatus();
     void getHeight();
     void postHeight();
     void postHeightPreset(Message &command);
