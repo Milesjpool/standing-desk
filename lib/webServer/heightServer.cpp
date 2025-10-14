@@ -221,27 +221,27 @@ void HeightServer::start(int ledPin)
         logger.info("MDNS responder started");
     }
 
-    server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET", "/"));
-    server.on("/status", HTTP_GET, trackRequest(std::bind(&HeightServer::getStatus, this), "GET", "/status"));
+    registerRoute(HTTP_GET, "/", std::bind(&HeightServer::getRoot, this));
+    registerRoute(HTTP_GET, "/status", std::bind(&HeightServer::getStatus, this));
 
 #ifdef COMMAND_EXPLORER
-    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST", "/command"));
+    registerRoute(HTTP_POST, UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), std::bind(&HeightServer::postCommand, this), "/command");
 #endif
 
-    server.on("/enabled", HTTP_GET, trackRequest(std::bind(&HeightServer::getEnabled, this), "GET", "/enabled"));
-    server.on("/enabled", HTTP_POST, trackRequest(std::bind(&HeightServer::postEnabled, this), "POST", "/enabled"));
-    server.on("/enabled", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteEnabled, this), "DELETE", "/enabled"));
-    server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET", "/height"));
-    server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE", "/height"));
-    server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST", "/height/preset/1"));
-    server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST", "/height/preset/2"));
-    server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST", "/height/preset/3"));
-    server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST", "/height/preset/4"));
-    server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST", "/height/preset/stand"));
-    server.on("/height/preset/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), "POST", "/height/preset/sit"));
+    registerRoute(HTTP_GET, "/enabled", std::bind(&HeightServer::getEnabled, this));
+    registerRoute(HTTP_POST, "/enabled", std::bind(&HeightServer::postEnabled, this));
+    registerRoute(HTTP_DELETE, "/enabled", std::bind(&HeightServer::deleteEnabled, this));
+    registerRoute(HTTP_GET, "/height", std::bind(&HeightServer::getHeight, this));
+    registerRoute(HTTP_DELETE, "/height", std::bind(&HeightServer::deleteHeight, this));
+    registerRoute(HTTP_POST, "/height/preset/1", std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)));
+    registerRoute(HTTP_POST, "/height/preset/2", std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)));
+    registerRoute(HTTP_POST, "/height/preset/3", std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)));
+    registerRoute(HTTP_POST, "/height/preset/4", std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)));
+    registerRoute(HTTP_POST, "/height/preset/stand", std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)));
+    registerRoute(HTTP_POST, "/height/preset/sit", std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)));
 
 #ifdef HEIGHT_INPUT
-    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST", "/height/{mm}"));
+    registerRoute(HTTP_POST, UriRegex("/height/([0-9]{1,4})"), std::bind(&HeightServer::postHeight, this), "/height/{mm}");
 #endif
 
     server.begin();
@@ -321,4 +321,23 @@ WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFuncti
         handler();
         digitalWrite(ledPin, 0);
     };
+}
+
+const char *HeightServer::httpMethodToString(HTTPMethod method)
+{
+    switch (method)
+    {
+    case HTTP_GET:
+        return "GET";
+    case HTTP_POST:
+        return "POST";
+    case HTTP_DELETE:
+        return "DELETE";
+    case HTTP_PUT:
+        return "PUT";
+    case HTTP_PATCH:
+        return "PATCH";
+    default:
+        return "UNKNOWN";
+    }
 }

@@ -40,6 +40,16 @@ private:
     void postEnabled();
     void deleteEnabled();
     WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char *method, const char *endpoint);
+
+    template <typename PathType>
+    void registerRoute(HTTPMethod method, const PathType &path, WebServer::THandlerFunction handler, const char *endpointName = nullptr)
+    {
+        const char *methodStr = httpMethodToString(method);
+        const char *endpoint = endpointName ? endpointName : path;
+        server.on(path, method, trackRequest(handler, methodStr, endpoint));
+    }
+
+    const char *httpMethodToString(HTTPMethod method);
     void abortCommand();
     void moveTowardsTargetHeight();
 
