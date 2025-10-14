@@ -7,6 +7,8 @@
 #error "STA_SSID and STA_PASS must be defined"
 #endif
 
+class DeviceStats;
+
 class WifiManager
 {
 private:
@@ -14,13 +16,12 @@ private:
     const char *ssid = STA_SSID;
     const char *password = STA_PASS;
     Logger &logger;
+    DeviceStats &deviceStats;
     String name;
-    int reconnectionCount;
 
 public:
-    WifiManager(Logger &logger, String name, int ledPin);
+    WifiManager(Logger &logger, DeviceStats &deviceStats, String name, int ledPin);
     void connect(Stream &outputSerial);
     String getLocalIp();
     String getHostname();
-    int getReconnectionCount();
 };

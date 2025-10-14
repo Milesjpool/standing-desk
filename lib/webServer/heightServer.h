@@ -5,6 +5,7 @@
 #include <deskSerial.h>
 #include <wifiManager.h>
 #include <movementDaemon.h>
+#include <deviceStats.h>
 
 #define PORT 80
 
@@ -20,6 +21,7 @@ private:
     WebServer server;
     DeskSerial &deskSerial;
     WifiManager &wifiManager;
+    DeviceStats &deviceStats;
     MovementDaemon movementDaemon;
 
     uint targetHeight = 0;
@@ -36,12 +38,12 @@ private:
     void getEnabled();
     void postEnabled();
     void deleteEnabled();
-    WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char *name, int ledPin);
+    WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, int ledPin, const char *method, const char *endpoint);
     void abortCommand();
     void moveTowardsTargetHeight();
 
 public:
-    HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager);
+    HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager, DeviceStats &deviceStats);
     void start(int ledPin);
     void stop();
     void loop();

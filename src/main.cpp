@@ -4,6 +4,7 @@
 #include <heightServer.h>
 #include <deskSerial.h>
 #include <byteUtils.h>
+#include <deviceStats.h>
 
 #ifndef NAME
 #define NAME "desk"
@@ -17,31 +18,34 @@ Logger logger(&Serial, LOG_LEVEL);
 
 const int LED_PIN = LED_BUILTIN;
 
+DeviceStats deviceStats;
 DeskSerial deskSerial(logger);
-WifiManager wifiManager(logger, NAME, LED_PIN);
-HeightServer heightServer(logger, deskSerial, wifiManager);
+WifiManager wifiManager(logger, deviceStats, NAME, LED_PIN);
+HeightServer heightServer(logger, deskSerial, wifiManager, deviceStats);
 
 void setup(void)
 {
-  Serial.begin(921600); // Inbuilt UART for debugging
+    Serial.begin(921600); // Inbuilt UART for debugging
 
-  pinMode(LED_PIN, OUTPUT);
+    pinMode(LED_PIN, OUTPUT);
 
-  deskSerial.begin();
-  wifiManager.connect(Serial);
-  heightServer.start(LED_PIN);
+    deviceStats.begin();
+    deskSerial.begin();
+    wifiManager.connect(Serial);
+    heightServer.start(LED_PIN);
 }
 
 void loop(void)
 {
-  // Monitor and reconnect WiFi if disconnected
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    logger.warn("WiFi disconnected, reconnecting...");
-    heightServer.stop();
-    wifiManager.connect(Serial);
-    heightServer.start(LED_PIN);
-  }
+    // Monitor and reconnect WiFi if disconnected
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        logger.warn("WiFi disconnected, reconnecting...");
+        heightServer.stop();
+        wifiManager.connect(Serial);
+        heightServer.start(LED_PIN);
+    }
 
-  heightServer.loop();
+    deviceStats.update();
+    heightServer.loop();
 }

@@ -4,7 +4,6 @@
 #include <buttons.h>
 #include <byteUtils.h>
 #include <uri/UriRegex.h>
-#include <uptime.h>
 
 void HeightServer::getRoot()
 {
@@ -30,8 +29,8 @@ void HeightServer::getStatus()
 {
     String hostname = wifiManager.getHostname();
     String ip = wifiManager.getLocalIp();
-    String currentUptime = uptime();
-    int wifiConnections = wifiManager.getReconnectionCount();
+    String currentUptime = deviceStats.getUptime();
+    int wifiConnections = deviceStats.getWifiConnections();
     String macAddress = WiFi.macAddress();
     HeightReading reading = deskSerial.getLastHeightReading();
     int rssi = WiFi.RSSI();
@@ -45,7 +44,34 @@ void HeightServer::getStatus()
                      "\", \"wifi_connections\": " + String(wifiConnections) +
                      ", \"wifi_rssi\": " + String(rssi) +
                      ", \"free_heap_bytes\": " + String(freeHeap) +
+                     ", \"boot_count\": " + String(deviceStats.getBootCount()) +
+                     ", \"last_reset_reason\": \"" + deviceStats.getResetReason() +
+                     "\", \"total_runtime_hours\": " + String(deviceStats.getTotalRuntimeHours()) +
                      ", \"enabled\": " + String(enabled);
+
+    message += ", \"api_requests\": { \"total\": " + String(deviceStats.getTotalApiRequests());
+
+    const auto &endpoints = deviceStats.getApiRequestsByEndpoint();
+    if (!endpoints.empty())
+    {
+        message += ", \"endpoints\": {";
+        bool first = true;
+        for (const auto &entry : endpoints)
+        {
+            if (!first)
+                message += ", ";
+            first = false;
+            // Escape the key for JSON (replace spaces with underscores for easier parsing)
+            String safeKey = entry.first;
+            safeKey.replace(" ", "_");
+            message += "\"" + safeKey + "\": " + String(entry.second);
+        }
+        message += "}";
+    }
+    message += " }";
+
+    message += ", \"errors\": { \"failed_height_readings\": " + String(deviceStats.getFailedHeightReadings()) +
+               ", \"communication_errors\": " + String(deviceStats.getCommunicationErrors()) + " }";
 
     if (reading.isValid())
     {
@@ -181,8 +207,8 @@ void HeightServer::deleteEnabled()
     server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
 }
 
-HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager)
-    : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), movementDaemon(logger, deskSerial)
+HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager, DeviceStats &deviceStats)
+    : deskSerial(deskSerial), logger(logger), server(PORT), wifiManager(wifiManager), deviceStats(deviceStats), movementDaemon(logger, deskSerial)
 {
 }
 
@@ -194,27 +220,27 @@ void HeightServer::start(int ledPin)
         logger.info("MDNS responder started");
     }
 
-    server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), "GET /", ledPin));
-    server.on("/status", HTTP_GET, trackRequest(std::bind(&HeightServer::getStatus, this), "GET /status", ledPin));
+    server.on("/", HTTP_GET, trackRequest(std::bind(&HeightServer::getRoot, this), ledPin, "GET", "/"));
+    server.on("/status", HTTP_GET, trackRequest(std::bind(&HeightServer::getStatus, this), ledPin, "GET", "/status"));
 
 #ifdef COMMAND_EXPLORER
-    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), "POST /command/*", ledPin));
+    server.on(UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), HTTP_POST, trackRequest(std::bind(&HeightServer::postCommand, this), ledPin, "POST", "/command"));
 #endif
 
-    server.on("/enabled", HTTP_GET, trackRequest(std::bind(&HeightServer::getEnabled, this), "GET /enabled", ledPin));
-    server.on("/enabled", HTTP_POST, trackRequest(std::bind(&HeightServer::postEnabled, this), "POST /enabled", ledPin));
-    server.on("/enabled", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteEnabled, this), "DELETE /enabled", ledPin));
-    server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), "GET /height", ledPin));
-    server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), "DELETE /height", ledPin));
-    server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), "POST /height/preset/1", ledPin));
-    server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), "POST /height/preset/2", ledPin));
-    server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), "POST /height/preset/3", ledPin));
-    server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), "POST /height/preset/4", ledPin));
-    server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), "POST /height/preset/stand", ledPin));
-    server.on("/height/preset/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), "POST /height/preset/sit", ledPin));
+    server.on("/enabled", HTTP_GET, trackRequest(std::bind(&HeightServer::getEnabled, this), ledPin, "GET", "/enabled"));
+    server.on("/enabled", HTTP_POST, trackRequest(std::bind(&HeightServer::postEnabled, this), ledPin, "POST", "/enabled"));
+    server.on("/enabled", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteEnabled, this), ledPin, "DELETE", "/enabled"));
+    server.on("/height", HTTP_GET, trackRequest(std::bind(&HeightServer::getHeight, this), ledPin, "GET", "/height"));
+    server.on("/height", HTTP_DELETE, trackRequest(std::bind(&HeightServer::deleteHeight, this), ledPin, "DELETE", "/height"));
+    server.on("/height/preset/1", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M1_CMD)), ledPin, "POST", "/height/preset/1"));
+    server.on("/height/preset/2", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M2_CMD)), ledPin, "POST", "/height/preset/2"));
+    server.on("/height/preset/3", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M3_CMD)), ledPin, "POST", "/height/preset/3"));
+    server.on("/height/preset/4", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(M4_CMD)), ledPin, "POST", "/height/preset/4"));
+    server.on("/height/preset/stand", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(STAND_CMD)), ledPin, "POST", "/height/preset/stand"));
+    server.on("/height/preset/sit", HTTP_POST, trackRequest(std::bind(&HeightServer::postHeightPreset, this, std::ref(SIT_CMD)), ledPin, "POST", "/height/preset/sit"));
 
 #ifdef HEIGHT_INPUT
-    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), "POST /height/*", ledPin));
+    server.on(UriRegex("/height/([0-9]{1,4})"), HTTP_POST, trackRequest(std::bind(&HeightServer::postHeight, this), ledPin, "POST", "/height/{mm}"));
 #endif
 
     server.begin();
@@ -284,12 +310,13 @@ void HeightServer::abortCommand()
     deskSerial.issueCommand(NO_CMD);
 }
 
-WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, const char *name, int ledPin)
+WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, int ledPin, const char *method, const char *endpoint)
 {
-    return [handler, name, ledPin, this]()
+    return [handler, ledPin, method, endpoint, this]()
     {
         digitalWrite(ledPin, 1);
-        logger.info("Request received: " + String(name));
+        logger.info("Request received: " + String(method) + " " + String(endpoint));
+        deviceStats.incrementApiRequests(method, endpoint);
         handler();
         digitalWrite(ledPin, 0);
     };
