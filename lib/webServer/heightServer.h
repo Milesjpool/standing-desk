@@ -32,6 +32,7 @@ private:
 
     void getRoot();
     void getStatus();
+    void getMetrics();
     void getHeight();
     void postHeight();
     void postHeightPreset(Message &command);

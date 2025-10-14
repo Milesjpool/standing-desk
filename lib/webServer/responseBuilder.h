@@ -19,4 +19,11 @@ public:
         DeskSerial &deskSerial,
         MovementDaemon &movementDaemon,
         bool enabled);
+
+    static String buildPrometheusMetrics(
+        WifiManager &wifiManager,
+        DeviceStats &deviceStats,
+        DeskSerial &deskSerial,
+        MovementDaemon &movementDaemon,
+        bool enabled);
 };

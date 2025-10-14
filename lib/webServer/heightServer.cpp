@@ -18,6 +18,12 @@ void HeightServer::getStatus()
     server.send(200, "application/json", message);
 }
 
+void HeightServer::getMetrics()
+{
+    String metrics = ResponseBuilder::buildPrometheusMetrics(wifiManager, deviceStats, deskSerial, movementDaemon, enabled);
+    server.send(200, "text/plain; version=0.0.4", metrics);
+}
+
 // E.g curl -XPOST http://.../command/02/data/0100
 void HeightServer::postCommand()
 {
@@ -152,6 +158,7 @@ void HeightServer::start(int ledPin)
 
     registerRoute(HTTP_GET, "/", std::bind(&HeightServer::getRoot, this));
     registerRoute(HTTP_GET, "/status", std::bind(&HeightServer::getStatus, this));
+    registerRoute(HTTP_GET, "/metrics", std::bind(&HeightServer::getMetrics, this));
 
 #ifdef COMMAND_EXPLORER
     registerRoute(HTTP_POST, UriRegex("/command/(c[0-9a-fA-F]{2})/data/([0-9a-fA-F]*)"), std::bind(&HeightServer::postCommand, this), "/command");
