@@ -53,6 +53,14 @@ private:
     void abortCommand();
     void moveTowardsTargetHeight();
 
+    // Returns max allowed staleness in milliseconds parsed from query parameter
+    // `max_age_seconds` (default 300 seconds). A value of 0 forces a poll.
+    unsigned long getMaxAgeMsFromQuery();
+
+    // Ensures a height reading is available and fresh within maxAgeMs.
+    // If maxAgeMs == 0, always forces a poll.
+    HeightReading ensureHeightFreshness(unsigned long maxAgeMs);
+
 public:
     HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager, DeviceStats &deviceStats);
     void start(int ledPin);
