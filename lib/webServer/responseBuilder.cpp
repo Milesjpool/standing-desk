@@ -5,15 +5,16 @@ String ResponseBuilder::buildRootMessage(const String &hostname, const String &i
     String message = "hello from " + hostname + "!\r\n";
     message += "Local IP: " + ip + "\r\n\r\n";
     message += "API Endpoints:\r\n";
-    message += "  GET    /status                    - Device status\r\n";
-    message += "  GET    /metrics                   - Prometheus metrics\r\n";
+    message += "  GET    /status                    - Device status (respects ?max_age_seconds=)\r\n";
+    message += "  GET    /metrics                   - Prometheus metrics (respects ?max_age_seconds=)\r\n";
     message += "  GET    /enabled                   - Check if server is enabled\r\n";
     message += "  POST   /enabled                   - Enable server\r\n";
     message += "  DELETE /enabled                   - Disable server\r\n";
-    message += "  GET    /height                    - Current desk height\r\n";
+    message += "  GET    /height                    - Current desk height (respects ?max_age_seconds=)\r\n";
     message += "  POST   /height/preset/{1-4}       - Move to preset 1-4\r\n";
     message += "  POST   /height/preset/{sit|stand} - Move to sit/stand preset\r\n";
     message += "  DELETE /height                    - Stop movement\r\n";
+    message += "\r\nQuery parameter: max_age_seconds (default 300, 0 forces poll)\r\n";
     return message;
 }
 

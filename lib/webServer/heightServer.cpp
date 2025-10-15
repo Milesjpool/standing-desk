@@ -14,12 +14,18 @@ void HeightServer::getRoot()
 
 void HeightServer::getStatus()
 {
+    // Ensure a reasonably fresh height reading before building status
+    unsigned long maxAgeMs = getMaxAgeMsFromQuery();
+    ensureHeightFreshness(maxAgeMs);
     String message = ResponseBuilder::buildStatusJson(wifiManager, deviceStats, deskSerial, movementDaemon, enabled);
     server.send(200, "application/json", message);
 }
 
 void HeightServer::getMetrics()
 {
+    // Ensure a reasonably fresh height reading before building metrics
+    unsigned long maxAgeMs = getMaxAgeMsFromQuery();
+    ensureHeightFreshness(maxAgeMs);
     String metrics = ResponseBuilder::buildPrometheusMetrics(wifiManager, deviceStats, deskSerial, movementDaemon, enabled);
     server.send(200, "text/plain; version=0.0.4", metrics);
 }
@@ -48,16 +54,8 @@ void HeightServer::postCommand()
 
 void HeightServer::getHeight()
 {
-    HeightReading reading = deskSerial.getLastHeightReading();
-
-    // Only request new height if the cached reading is stale
-    // This avoids interrupting ongoing movements
-    if (enabled && (!reading.isValid() || reading.isStale()))
-    {
-        deskSerial.issueCommand(NO_CMD);
-        deskSerial.consumeStream();
-        reading = deskSerial.getLastHeightReading();
-    }
+    unsigned long maxAgeMs = getMaxAgeMsFromQuery();
+    HeightReading reading = ensureHeightFreshness(maxAgeMs);
 
     if (!reading.isValid())
     {
@@ -245,6 +243,58 @@ void HeightServer::abortCommand()
     targetHeight = 0;
     targetHeightDelta = 0;
     deskSerial.issueCommand(NO_CMD);
+}
+
+unsigned long HeightServer::getMaxAgeMsFromQuery()
+{
+    // Default freshness tolerance: 5 minutes
+    const unsigned long defaultSeconds = 300;
+    if (!server.hasArg("max_age_seconds"))
+    {
+        return defaultSeconds * 1000UL;
+    }
+
+    String value = server.arg("max_age_seconds");
+    long seconds = value.toInt();
+    if (seconds < 0)
+    {
+        seconds = 0; // clamp negative to 0 (force poll)
+    }
+    return static_cast<unsigned long>(seconds) * 1000UL;
+}
+
+HeightReading HeightServer::ensureHeightFreshness(unsigned long maxAgeMs)
+{
+    HeightReading reading = deskSerial.getLastHeightReading();
+
+    bool needPoll = false;
+    if (!reading.isValid())
+    {
+        needPoll = true;
+    }
+    else if (maxAgeMs == 0)
+    {
+        // Explicit forced poll
+        needPoll = true;
+    }
+    else
+    {
+        unsigned long ageMs = reading.getStaleness();
+        if (ageMs > maxAgeMs)
+        {
+            needPoll = true;
+        }
+    }
+
+    // Only poll if server is enabled; otherwise return whatever is available
+    if (enabled && needPoll)
+    {
+        deskSerial.issueCommand(NO_CMD);
+        deskSerial.consumeStream();
+        reading = deskSerial.getLastHeightReading();
+    }
+
+    return reading;
 }
 
 WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFunction handler, const char *method, const char *endpoint)
