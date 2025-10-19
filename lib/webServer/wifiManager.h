@@ -19,6 +19,8 @@ private:
     DeviceStats &deviceStats;
     String name;
 
+    void syncTime();
+
 public:
     WifiManager(Logger &logger, DeviceStats &deviceStats, String name, int ledPin);
     void connect(Stream &outputSerial);
