@@ -11,6 +11,7 @@ String ResponseBuilder::buildRootMessage(const String &hostname, const String &i
     message += "  POST   /enabled                   - Enable server\r\n";
     message += "  DELETE /enabled                   - Disable server\r\n";
     message += "  GET    /height                    - Current desk height\r\n";
+    message += "                                      ?freshness_tolerance=N (seconds, default: 300, 0=force poll)\r\n";
     message += "  POST   /height/preset/{1-4}       - Move to preset 1-4\r\n";
     message += "  POST   /height/preset/{sit|stand} - Move to sit/stand preset\r\n";
     message += "  DELETE /height                    - Stop movement\r\n";
