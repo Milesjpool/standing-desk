@@ -3,8 +3,8 @@
 #include <txStream.h>
 #include <buttons.h>
 
-DeskSerial::DeskSerial(Logger &logger)
-    : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0, 0), enabled(true)
+DeskSerial::DeskSerial(Logger &logger, DeviceStats &deviceStats)
+    : serial(RXPIN, TXPIN), logger(logger), deviceStats(deviceStats), currentHeight(0, 0, 0), enabled(true)
 {
 }
 
@@ -16,12 +16,12 @@ void DeskSerial::begin()
 
 void DeskSerial::consumeStream()
 {
-    consumeMessageStream(serial, logger, currentHeight, true);
+    consumeMessageStream(serial, logger, deviceStats, currentHeight, true);
 }
 
 void DeskSerial::consumeMessage()
 {
-    consumeMessageStream(serial, logger, currentHeight, false);
+    consumeMessageStream(serial, logger, deviceStats, currentHeight, false);
 }
 
 void DeskSerial::issueCommand(Message &command)

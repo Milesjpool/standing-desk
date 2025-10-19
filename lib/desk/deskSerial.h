@@ -4,6 +4,7 @@
 #include <logger.h>
 #include <height.h>
 #include <message.h>
+#include <deviceStats.h>
 
 #define RXPIN 27
 #define TXPIN 12
@@ -15,11 +16,12 @@ class DeskSerial
 private:
     SoftwareSerial serial;
     Logger &logger;
+    DeviceStats &deviceStats;
     HeightReading currentHeight;
     bool enabled;
 
 public:
-    DeskSerial(Logger &logger);
+    DeskSerial(Logger &logger, DeviceStats &deviceStats);
     void begin();
     void issueCommand(Message &command);
     void consumeMessage();

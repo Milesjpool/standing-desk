@@ -19,7 +19,7 @@ Logger logger(&Serial, LOG_LEVEL);
 const int LED_PIN = LED_BUILTIN;
 
 DeviceStats deviceStats;
-DeskSerial deskSerial(logger);
+DeskSerial deskSerial(logger, deviceStats);
 WifiManager wifiManager(logger, deviceStats, NAME, LED_PIN);
 HeightServer heightServer(logger, deskSerial, wifiManager, deviceStats);
 

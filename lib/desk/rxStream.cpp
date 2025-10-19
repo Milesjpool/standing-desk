@@ -4,14 +4,14 @@
 
 const int MIN_LENGTH = 3; // start + length + end
 
-void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight, boolean consumeFully)
+void consumeMessageStream(SoftwareSerial &stream, Logger &logger, DeviceStats &deviceStats, HeightReading &currentHeight, boolean consumeFully)
 {
     while (stream.available() >= MIN_LENGTH)
     {
         byte startByte = stream.read();
         if (startByte == START)
         {
-            readMessage(stream, logger, currentHeight);
+            readMessage(stream, logger, deviceStats, currentHeight);
         }
         else
         {
@@ -30,7 +30,7 @@ void consumeMessageStream(SoftwareSerial &stream, Logger &logger, HeightReading 
     }
 }
 
-void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentHeight)
+void readMessage(SoftwareSerial &stream, Logger &logger, DeviceStats &deviceStats, HeightReading &currentHeight)
 {
     byte messageLength = stream.read();
     int minimumLength = 2 + CHECKSUM_SIZE; // length + type + checksum
@@ -38,6 +38,7 @@ void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentH
     if (messageLength < minimumLength)
     {
         logger.warn("message length too short - " + formatByte(messageLength));
+        deviceStats.incrementCommunicationErrors();
         return;
     }
 
@@ -56,6 +57,7 @@ void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentH
         if (timeout == 0)
         {
             logger.warn("timeout waiting for data");
+            deviceStats.incrementCommunicationErrors();
             return;
         }
     }
@@ -68,6 +70,7 @@ void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentH
         logger.warn(String("End byte not found. ") +
                     "Expected: '... " + formatByte(END) + "'. " +
                     "Recieved: '" + formatByte(START) + " " + formatByte(messageLength) + " " + formatByte(messageType) + " " + formatBytes(data, dataLength) + " " + formatBytes(checksum, CHECKSUM_SIZE) + " " + formatByte(endByte) + "'");
+        deviceStats.incrementCommunicationErrors();
         return;
     }
 
@@ -75,15 +78,16 @@ void readMessage(SoftwareSerial &stream, Logger &logger, HeightReading &currentH
     if (!message.hasChecksum(checksum))
     {
         logger.warn("Checksum mismatch. Recieved: '" + formatByte(START) + " " + formatByte(messageLength) + " " + formatByte(messageType) + " " + formatBytes(data, dataLength) + " " + formatBytes(checksum, CHECKSUM_SIZE) + " " + formatByte(endByte) + "'");
+        deviceStats.incrementCommunicationErrors();
         return;
     }
 
     logger.debug("message read successfully. #" + formatByte(messageType) + ": [" + formatBytes(data, dataLength) + "]");
 
-    processMessage(logger, message, currentHeight);
+    processMessage(logger, deviceStats, message, currentHeight);
 }
 
-void processMessage(Logger &logger, Message &message, HeightReading &currentHeight)
+void processMessage(Logger &logger, DeviceStats &deviceStats, Message &message, HeightReading &currentHeight)
 {
     byte type = message.type;
     int length = message.getLength();
@@ -112,11 +116,13 @@ void processMessage(Logger &logger, Message &message, HeightReading &currentHeig
         else
         {
             logger.warn("Invalid height message: " + message.toString());
+            deviceStats.incrementFailedHeightReadings();
         }
         break;
     }
     default:
         logger.debug("Unknown message type: #" + formatByte(type) + ": [" + message.toString() + "]");
+        // TODO: Increment unknown message types
         break;
     }
 }
