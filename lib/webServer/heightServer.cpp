@@ -14,20 +14,22 @@ void HeightServer::getRoot()
 
 void HeightServer::getStatus()
 {
-    String message = ResponseBuilder::buildStatusJson(wifiManager, deviceStats, deskSerial, movementDaemon, enabled);
+    deskSerial.refreshHeightReading();
+    String message = ResponseBuilder::buildStatusJson(wifiManager, deviceStats, deskSerial, movementDaemon);
     server.send(200, "application/json", message);
 }
 
 void HeightServer::getMetrics()
 {
-    String metrics = ResponseBuilder::buildPrometheusMetrics(wifiManager, deviceStats, deskSerial, movementDaemon, enabled);
+    deskSerial.refreshHeightReading();
+    String metrics = ResponseBuilder::buildPrometheusMetrics(wifiManager, deviceStats, deskSerial, movementDaemon);
     server.send(200, "text/plain; version=0.0.4", metrics);
 }
 
 // E.g curl -XPOST http://.../command/02/data/0100
 void HeightServer::postCommand()
 {
-    if (!enabled)
+    if (!deskSerial.isEnabled())
     {
         server.send(400, "application/json", "{ \"error\": \"Server is disabled\" }");
         return;
@@ -48,16 +50,8 @@ void HeightServer::postCommand()
 
 void HeightServer::getHeight()
 {
+    deskSerial.refreshHeightReading();
     HeightReading reading = deskSerial.getLastHeightReading();
-
-    // Only request new height if the cached reading is stale
-    // This avoids interrupting ongoing movements
-    if (enabled && (!reading.isValid() || reading.isStale()))
-    {
-        deskSerial.issueCommand(NO_CMD);
-        deskSerial.consumeStream();
-        reading = deskSerial.getLastHeightReading();
-    }
 
     if (!reading.isValid())
     {
@@ -71,7 +65,7 @@ void HeightServer::getHeight()
 
 void HeightServer::postHeightPreset(Message &presetCommand)
 {
-    if (!enabled)
+    if (!deskSerial.isEnabled())
     {
         server.send(400, "application/json", "{ \"error\": \"Server is disabled\" }");
         return;
@@ -89,7 +83,7 @@ void HeightServer::postHeightPreset(Message &presetCommand)
 
 void HeightServer::postHeight()
 {
-    if (!enabled)
+    if (!deskSerial.isEnabled())
     {
         server.send(400, "application/json", "{ \"error\": \"Server is disabled\" }");
         return;
@@ -127,19 +121,19 @@ void HeightServer::deleteHeight()
 
 void HeightServer::getEnabled()
 {
-    server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
+    server.send(200, "application/json", "{ \"enabled\": " + String(deskSerial.isEnabled()) + " }");
 }
 
 void HeightServer::postEnabled()
 {
-    enabled = true;
-    server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
+    deskSerial.setEnabled(true);
+    server.send(200, "application/json", "{ \"enabled\": " + String(deskSerial.isEnabled()) + " }");
 }
 
 void HeightServer::deleteEnabled()
 {
-    enabled = false;
-    server.send(200, "application/json", "{ \"enabled\": " + String(enabled) + " }");
+    deskSerial.setEnabled(false);
+    server.send(200, "application/json", "{ \"enabled\": " + String(deskSerial.isEnabled()) + " }");
 }
 
 HeightServer::HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager, DeviceStats &deviceStats)

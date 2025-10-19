@@ -27,7 +27,6 @@ private:
 
     uint targetHeight = 0;
     int targetHeightDelta = 0;
-    bool enabled = true;
     int ledPin;
 
     void getRoot();
@@ -50,6 +49,7 @@ private:
         const char *endpoint = endpointName ? endpointName : path;
         server.on(path, method, trackRequest(handler, methodStr, endpoint));
     }
+
     void abortCommand();
     void moveTowardsTargetHeight();
 

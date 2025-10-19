@@ -21,8 +21,7 @@ String ResponseBuilder::buildPrometheusMetrics(
     WifiManager &wifiManager,
     DeviceStats &deviceStats,
     DeskSerial &deskSerial,
-    MovementDaemon &movementDaemon,
-    bool enabled)
+    MovementDaemon &movementDaemon)
 {
     String hostname = wifiManager.getHostname();
     String ip = wifiManager.getLocalIp();
@@ -134,7 +133,7 @@ String ResponseBuilder::buildPrometheusMetrics(
     // Desk control enabled
     metrics += "# HELP standing_desk_control_enabled Whether desk control is enabled (1=enabled, 0=disabled)\n";
     metrics += "# TYPE standing_desk_control_enabled gauge\n";
-    metrics += "standing_desk_control_enabled{" + commonLabels + "} " + String(enabled ? 1 : 0) + "\n\n";
+    metrics += "standing_desk_control_enabled{" + commonLabels + "} " + String(deskSerial.isEnabled() ? 1 : 0) + "\n\n";
 
     // Desk height
     if (reading.isValid())
@@ -164,8 +163,7 @@ String ResponseBuilder::buildStatusJson(
     WifiManager &wifiManager,
     DeviceStats &deviceStats,
     DeskSerial &deskSerial,
-    MovementDaemon &movementDaemon,
-    bool enabled)
+    MovementDaemon &movementDaemon)
 {
     String hostname = wifiManager.getHostname();
     String ip = wifiManager.getLocalIp();
@@ -237,7 +235,7 @@ String ResponseBuilder::buildStatusJson(
     message += ", \"errors\": { \"failed_height_readings\": " + String(deviceStats.getFailedHeightReadings()) +
                ", \"communication_errors\": " + String(deviceStats.getCommunicationErrors()) + " }";
 
-    message += ", \"desk\": { \"control_enabled\": " + String(enabled ? "true" : "false");
+    message += ", \"desk\": { \"control_enabled\": " + String(deskSerial.isEnabled() ? "true" : "false");
 
     if (reading.isValid())
     {

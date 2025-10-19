@@ -17,13 +17,11 @@ public:
         WifiManager &wifiManager,
         DeviceStats &deviceStats,
         DeskSerial &deskSerial,
-        MovementDaemon &movementDaemon,
-        bool enabled);
+        MovementDaemon &movementDaemon);
 
     static String buildPrometheusMetrics(
         WifiManager &wifiManager,
         DeviceStats &deviceStats,
         DeskSerial &deskSerial,
-        MovementDaemon &movementDaemon,
-        bool enabled);
+        MovementDaemon &movementDaemon);
 };

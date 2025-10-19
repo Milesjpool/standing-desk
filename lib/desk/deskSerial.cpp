@@ -1,9 +1,10 @@
 #include <deskSerial.h>
 #include <rxStream.h>
 #include <txStream.h>
+#include <buttons.h>
 
 DeskSerial::DeskSerial(Logger &logger)
-    : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0, 0)
+    : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0, 0), enabled(true)
 {
 }
 
@@ -36,4 +37,27 @@ void DeskSerial::issueCommand(Message &command)
 HeightReading DeskSerial::getLastHeightReading()
 {
     return currentHeight;
+}
+
+void DeskSerial::refreshHeightReading()
+{
+    HeightReading reading = getLastHeightReading();
+
+    // Only request new height if the cached reading is stale
+    // This avoids interrupting ongoing movements
+    if (enabled && (!reading.isValid() || reading.isStale()))
+    {
+        issueCommand(NO_CMD);
+        consumeStream();
+    }
+}
+
+bool DeskSerial::isEnabled()
+{
+    return enabled;
+}
+
+void DeskSerial::setEnabled(bool enabled)
+{
+    this->enabled = enabled;
 }

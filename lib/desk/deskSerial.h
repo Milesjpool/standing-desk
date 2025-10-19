@@ -5,21 +5,27 @@
 #include <height.h>
 #include <message.h>
 
-#define RXPIN  27
-#define TXPIN  12
+#define RXPIN 27
+#define TXPIN 12
 
 #define BAUDRATE 9600
 
-class DeskSerial {
+class DeskSerial
+{
 private:
     SoftwareSerial serial;
     Logger &logger;
     HeightReading currentHeight;
+    bool enabled;
+
 public:
     DeskSerial(Logger &logger);
     void begin();
     void issueCommand(Message &command);
     void consumeMessage();
     void consumeStream();
+    void refreshHeightReading();
     HeightReading getLastHeightReading();
+    bool isEnabled();
+    void setEnabled(bool enabled);
 };
