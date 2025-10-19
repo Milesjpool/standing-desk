@@ -40,8 +40,8 @@ int decodeHeight(byte *data, int dataLength)
     return height_cm / divisor;
 }
 
-HeightReading::HeightReading(int millimeters, unsigned long timestamp, unsigned long firstRecorded, unsigned long lastRecorded)
-    : height_mm(millimeters), timestamp_unix(timestamp), firstRecorded_ms(firstRecorded), lastRecorded_ms(lastRecorded)
+HeightReading::HeightReading(int millimeters, unsigned long timestamp, unsigned long milliseconds)
+    : height_mm(millimeters), timestamp_unix(timestamp), recorded_ms(milliseconds)
 {
 }
 boolean HeightReading::isValid()
@@ -55,24 +55,13 @@ unsigned int HeightReading::getHeight()
 unsigned long HeightReading::getStaleness()
 {
     unsigned long now = millis();
-    if (now < lastRecorded_ms)
+    if (now < recorded_ms)
     {
-        return ULONG_MAX - lastRecorded_ms + now;
+        return ULONG_MAX - recorded_ms + now;
     }
     else
     {
-        return now - lastRecorded_ms;
-    }
-}
-unsigned long HeightReading::getDuration()
-{
-    if (lastRecorded_ms < firstRecorded_ms)
-    {
-        return ULONG_MAX - firstRecorded_ms + lastRecorded_ms;
-    }
-    else
-    {
-        return lastRecorded_ms - firstRecorded_ms;
+        return now - recorded_ms;
     }
 }
 unsigned long HeightReading::getTimestamp()

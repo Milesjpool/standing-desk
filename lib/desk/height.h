@@ -7,15 +7,13 @@ struct HeightReading
 {
     unsigned int height_mm;
     unsigned long timestamp_unix;
-    unsigned long firstRecorded_ms;
-    unsigned long lastRecorded_ms;
+    unsigned long recorded_ms;
 
-    HeightReading(int millimeters, unsigned long timestamp, unsigned long firstRecorded, unsigned long lastRecorded);
+    HeightReading(int millimeters, unsigned long timestamp, unsigned long milliseconds);
     boolean isValid();
     unsigned int getHeight();
     unsigned long getTimestamp();
     unsigned long getStaleness();
-    unsigned long getDuration();
     boolean isStale();
 };
 
