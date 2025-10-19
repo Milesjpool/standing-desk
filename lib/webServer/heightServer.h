@@ -1,6 +1,7 @@
 #pragma once
 #include <Arduino.h>
 #include <WebServer.h>
+#include <uri/UriRegex.h>
 #include <logger.h>
 #include <deskSerial.h>
 #include <wifiManager.h>
@@ -43,12 +44,14 @@ private:
     void deleteEnabled();
     WebServer::THandlerFunction trackRequest(WebServer::THandlerFunction handler, const char *method, const char *endpoint);
 
-    template <typename PathType>
-    void registerRoute(HTTPMethod method, const PathType &path, WebServer::THandlerFunction handler, const char *endpointName = nullptr)
+    void registerRoute(HTTPMethod method, const char *path, WebServer::THandlerFunction handler)
     {
-        const char *methodStr = ::httpMethodToString(method);
-        const char *endpoint = endpointName ? endpointName : path;
-        server.on(path, method, trackRequest(handler, methodStr, endpoint));
+        server.on(path, method, trackRequest(handler, ::httpMethodToString(method), path));
+    }
+
+    void registerRoute(HTTPMethod method, const UriRegex &path, WebServer::THandlerFunction handler, const char *pathName)
+    {
+        server.on(path, method, trackRequest(handler, ::httpMethodToString(method), pathName));
     }
 
     void abortCommand();
