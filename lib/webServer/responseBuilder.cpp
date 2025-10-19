@@ -40,6 +40,7 @@ String ResponseBuilder::buildPrometheusMetrics(
     uint32_t flashFree = ESP.getFreeSketchSpace();
     String chipModel = ESP.getChipModel();
 
+    uint32_t currentTimestamp = time(NULL);
     uint32_t bootCount = deviceStats.getBootCount();
     uint32_t totalRuntimeHours = deviceStats.getTotalRuntimeHours();
     uint32_t totalRuntimeSeconds = totalRuntimeHours * 3600;
@@ -53,6 +54,11 @@ String ResponseBuilder::buildPrometheusMetrics(
     String commonLabels = "hostname=\"" + hostname + "\",chip_model=\"" + chipModel + "\",instance=\"" + ip + ":80\"";
 
     String metrics = "";
+
+    // Current system timestamp
+    metrics += "# HELP standing_desk_current_timestamp Current system Unix timestamp\n";
+    metrics += "# TYPE standing_desk_current_timestamp gauge\n";
+    metrics += "standing_desk_current_timestamp{" + commonLabels + "} " + String(currentTimestamp) + "\n\n";
 
     // Uptime
     metrics += "# HELP standing_desk_uptime_seconds Time since device boot in seconds\n";
@@ -137,6 +143,10 @@ String ResponseBuilder::buildPrometheusMetrics(
         metrics += "# TYPE standing_desk_height_mm gauge\n";
         metrics += "standing_desk_height_mm{" + commonLabels + "} " + String(reading.getHeight()) + "\n\n";
 
+        metrics += "# HELP standing_desk_height_reading_timestamp Unix timestamp when height reading was taken\n";
+        metrics += "# TYPE standing_desk_height_reading_timestamp gauge\n";
+        metrics += "standing_desk_height_reading_timestamp{" + commonLabels + "} " + String(reading.getTimestamp()) + "\n\n";
+
         metrics += "# HELP standing_desk_height_reading_age_ms Age of height reading in milliseconds\n";
         metrics += "# TYPE standing_desk_height_reading_age_ms gauge\n";
         metrics += "standing_desk_height_reading_age_ms{" + commonLabels + "} " + String(reading.getStaleness()) + "\n\n";
@@ -175,11 +185,13 @@ String ResponseBuilder::buildStatusJson(
     uint32_t flashUsagePercent = (flashUsed * 100) / flashSize;
     String chipModel = ESP.getChipModel();
     bool isMoving = movementDaemon.isMoving();
+    uint32_t currentTimestamp = time(NULL);
 
     String message = "{ \"uptime\": \"" + currentUptime +
                      "\", \"boot_count\": " + String(deviceStats.getBootCount()) +
                      ", \"last_reset_reason\": \"" + deviceStats.getResetReason() +
-                     "\", \"total_runtime_hours\": " + String(deviceStats.getTotalRuntimeHours());
+                     "\", \"total_runtime_hours\": " + String(deviceStats.getTotalRuntimeHours()) +
+                     ", \"current_timestamp\": " + String(currentTimestamp);
 
     message += ", \"hardware\": { \"chip_model\": \"" + chipModel +
                "\", \"firmware_version\": \"" + String(__DATE__) + " " + String(__TIME__) + "\" }";
@@ -230,12 +242,13 @@ String ResponseBuilder::buildStatusJson(
     if (reading.isValid())
     {
         message += ", \"height_mm\": " + String(reading.getHeight()) +
+                   ", \"height_timestamp\": " + String(reading.getTimestamp()) +
                    ", \"age_ms\": " + String(reading.getStaleness()) +
                    ", \"is_moving\": " + String(isMoving ? "true" : "false");
     }
     else
     {
-        message += ", \"height_mm\": null, \"age_ms\": null, \"is_moving\": false";
+        message += ", \"height_mm\": null, \"height_timestamp\": null, \"age_ms\": null, \"is_moving\": false";
     }
 
     message += " }";

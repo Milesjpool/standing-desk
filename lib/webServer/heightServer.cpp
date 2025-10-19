@@ -66,7 +66,7 @@ void HeightServer::getHeight()
     }
 
     bool isMoving = movementDaemon.isMoving();
-    server.send(200, "application/json", "{ \"height_mm\": " + String(reading.getHeight()) + ", \"age_ms\": " + String(reading.getStaleness()) + ", \"is_moving\": " + String(isMoving ? "true" : "false") + " }");
+    server.send(200, "application/json", "{ \"height_mm\": " + String(reading.getHeight()) + ", \"height_timestamp\": " + String(reading.getTimestamp()) + ", \"age_ms\": " + String(reading.getStaleness()) + ", \"is_moving\": " + String(isMoving ? "true" : "false") + " }");
 }
 
 void HeightServer::postHeightPreset(Message &presetCommand)
