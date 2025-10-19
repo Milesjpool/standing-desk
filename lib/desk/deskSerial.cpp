@@ -2,22 +2,29 @@
 #include <rxStream.h>
 #include <txStream.h>
 
-DeskSerial::DeskSerial(Logger &logger) : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0, 0) {}
+DeskSerial::DeskSerial(Logger &logger)
+    : serial(RXPIN, TXPIN), logger(logger), currentHeight(0, 0, 0, 0)
+{
+}
 
-void DeskSerial::begin() {
+void DeskSerial::begin()
+{
     pinMode(TXWAKE, OUTPUT);
     serial.begin(BAUDRATE);
 }
 
-void DeskSerial::consumeStream() {
+void DeskSerial::consumeStream()
+{
     consumeMessageStream(serial, logger, currentHeight, true);
 }
 
-void DeskSerial::consumeMessage() {
+void DeskSerial::consumeMessage()
+{
     consumeMessageStream(serial, logger, currentHeight, false);
 }
 
-void DeskSerial::issueCommand(Message &command) {
+void DeskSerial::issueCommand(Message &command)
+{
     digitalWrite(TXWAKE, HIGH);
     delay(5);
     sendCommand(serial, command);
@@ -26,6 +33,7 @@ void DeskSerial::issueCommand(Message &command) {
     digitalWrite(TXWAKE, LOW);
 }
 
-HeightReading DeskSerial::getLastHeightReading() {
+HeightReading DeskSerial::getLastHeightReading()
+{
     return currentHeight;
 }
