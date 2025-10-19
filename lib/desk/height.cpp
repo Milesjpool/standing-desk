@@ -68,7 +68,11 @@ unsigned long HeightReading::getTimestamp()
 {
     return timestamp_unix;
 }
+boolean HeightReading::isStale(unsigned long tolerance_ms)
+{
+    return getStaleness() > tolerance_ms;
+}
 boolean HeightReading::isStale()
 {
-    return getStaleness() > STALENESS_THRESHOLD;
+    return isStale(STALENESS_THRESHOLD);
 }

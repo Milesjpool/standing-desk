@@ -10,7 +10,8 @@
 
 #define PORT 80
 
-const uint COMMAND_INTERVAL = 1500; // Min time between accepted commands.
+const uint COMMAND_INTERVAL = 1500;                       // Min time between accepted commands.
+const uint DEFAULT_FRESHNESS_TOLERANCE = 5 * 60 * 1000UL; // Default height reading freshness tolerance: 5 minutes
 
 const uint MIN_HEIGHT = 675;
 const uint MAX_HEIGHT = 1260;
@@ -52,6 +53,7 @@ private:
 
     void abortCommand();
     void moveTowardsTargetHeight();
+    unsigned long getFreshnessToleranceFromQuery();
 
 public:
     HeightServer(Logger &logger, DeskSerial &deskSerial, WifiManager &wifiManager, DeviceStats &deviceStats);

@@ -24,7 +24,7 @@ public:
     void issueCommand(Message &command);
     void consumeMessage();
     void consumeStream();
-    void refreshHeightReading();
+    void refreshHeightReading(unsigned long tolerance_ms);
     HeightReading getLastHeightReading();
     bool isEnabled();
     void setEnabled(bool enabled);

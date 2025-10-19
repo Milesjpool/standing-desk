@@ -14,14 +14,16 @@ void HeightServer::getRoot()
 
 void HeightServer::getStatus()
 {
-    deskSerial.refreshHeightReading();
+    unsigned long freshnessTolerance = getFreshnessToleranceFromQuery();
+    deskSerial.refreshHeightReading(freshnessTolerance);
     String message = ResponseBuilder::buildStatusJson(wifiManager, deviceStats, deskSerial, movementDaemon);
     server.send(200, "application/json", message);
 }
 
 void HeightServer::getMetrics()
 {
-    deskSerial.refreshHeightReading();
+    unsigned long freshnessTolerance = getFreshnessToleranceFromQuery();
+    deskSerial.refreshHeightReading(freshnessTolerance);
     String metrics = ResponseBuilder::buildPrometheusMetrics(wifiManager, deviceStats, deskSerial, movementDaemon);
     server.send(200, "text/plain; version=0.0.4", metrics);
 }
@@ -50,7 +52,8 @@ void HeightServer::postCommand()
 
 void HeightServer::getHeight()
 {
-    deskSerial.refreshHeightReading();
+    unsigned long freshnessTolerance = getFreshnessToleranceFromQuery();
+    deskSerial.refreshHeightReading(freshnessTolerance);
     HeightReading reading = deskSerial.getLastHeightReading();
 
     if (!reading.isValid())
@@ -251,4 +254,19 @@ WebServer::THandlerFunction HeightServer::trackRequest(WebServer::THandlerFuncti
         handler();
         digitalWrite(ledPin, 0);
     };
+}
+
+unsigned long HeightServer::getFreshnessToleranceFromQuery()
+{
+    if (!server.hasArg("freshness_tolerance"))
+    {
+        return DEFAULT_FRESHNESS_TOLERANCE;
+    }
+    String value = server.arg("freshness_tolerance");
+    long tolerance = value.toInt();
+    if (tolerance < 0)
+    {
+        return 0;
+    }
+    return static_cast<unsigned long>(tolerance) * 1000UL;
 }

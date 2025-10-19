@@ -39,13 +39,13 @@ HeightReading DeskSerial::getLastHeightReading()
     return currentHeight;
 }
 
-void DeskSerial::refreshHeightReading()
+void DeskSerial::refreshHeightReading(unsigned long tolerance_ms)
 {
     HeightReading reading = getLastHeightReading();
 
     // Only request new height if the cached reading is stale
     // This avoids interrupting ongoing movements
-    if (enabled && (!reading.isValid() || reading.isStale()))
+    if (enabled && (!reading.isValid() || reading.isStale(tolerance_ms)))
     {
         issueCommand(NO_CMD);
         consumeStream();

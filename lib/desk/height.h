@@ -14,6 +14,7 @@ struct HeightReading
     unsigned int getHeight();
     unsigned long getTimestamp();
     unsigned long getStaleness();
+    boolean isStale(unsigned long tolerance_ms);
     boolean isStale();
 };
 
