@@ -2,6 +2,8 @@
 
 A little [PlatformIO](https://platformio.org/), Arduino-based project, to let me control my Flexispot standing-desk via a REST API\*.
 
+[![Grafana Badge](https://img.shields.io/badge/Grafana-grey?style=flat-square&logo=grafana)](https://grafana.aesop.casa/public-dashboards/4751c3c137974d77a0905190a4f2ccc0)
+
 Required hardware:
 
 - Flexispot [E7 pro](https://staticprod.sys.flexispot.co.uk/dev/trantor/attachments/E7-PRO-UK%20.pdf) (Or similar?)
